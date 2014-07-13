@@ -2,7 +2,8 @@
 module Main where
 
 
-import Huba_Types
+import ThriftInterface
+import qualified Huba_Types
 
 -- import Ingestor
 -- import Ingestor_Iface
@@ -23,11 +24,11 @@ import Network
 
 main :: IO ()
 main = do
-  transport  <- hOpen ("localhost" :: String, PortNumber 9090)
+  transport  <- hOpen ("localhost" :: String, PortNumber 9091)
   let binProto = BinaryProtocol transport
   let protocols = (binProto, binProto)
 
-  resp <- Client.log protocols [simpleLogMessage]
+  resp <- Client.log protocols [toThrift simpleLogMessage]
   putStrLn "Sent log message!"
   print resp
 
@@ -39,5 +40,5 @@ main = do
 
 
 simpleLogMessage :: LogMessage
-simpleLogMessage = LogMessage (Just [("key", col)]) (Just 0)
-  where col = ColumnValue (Just "some string value") Nothing Nothing Nothing
+simpleLogMessage = LogMessage 0 "some-table" [("key", StringValue "some string value")]
+  -- where col = ColumnValue (Just "some string value") Nothing Nothing Nothing

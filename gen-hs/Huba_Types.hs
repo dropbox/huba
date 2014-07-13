@@ -95,18 +95,22 @@ read_ColumnValue iprot = do
   record <- read_ColumnValue_fields iprot (ColumnValue{f_ColumnValue_stringValue=Nothing,f_ColumnValue_intValue=Nothing,f_ColumnValue_stringSet=Nothing,f_ColumnValue_stringVector=Nothing})
   readStructEnd iprot
   return record
-data LogMessage = LogMessage{f_LogMessage_columns :: Maybe (Map.HashMap Text ColumnValue),f_LogMessage_timestamp :: Maybe Int64} deriving (Show,Eq,Typeable)
+data LogMessage = LogMessage{f_LogMessage_timestamp :: Maybe Int64,f_LogMessage_table :: Maybe Text,f_LogMessage_columns :: Maybe (Map.HashMap Text ColumnValue)} deriving (Show,Eq,Typeable)
 instance Hashable LogMessage where
-  hashWithSalt salt record = salt   `hashWithSalt` f_LogMessage_columns record   `hashWithSalt` f_LogMessage_timestamp record  
+  hashWithSalt salt record = salt   `hashWithSalt` f_LogMessage_timestamp record   `hashWithSalt` f_LogMessage_table record   `hashWithSalt` f_LogMessage_columns record  
 write_LogMessage oprot record = do
   writeStructBegin oprot "LogMessage"
-  case f_LogMessage_columns record of {Nothing -> return (); Just _v -> do
-    writeFieldBegin oprot ("columns",T_MAP,1)
-    (let {f [] = return (); f ((_kiter19,_viter20):t) = do {do {writeString oprot _kiter19;write_ColumnValue oprot _viter20};f t}} in do {writeMapBegin oprot (T_STRING,T_STRUCT,fromIntegral $ Map.size _v); f (Map.toList _v);writeMapEnd oprot})
-    writeFieldEnd oprot}
   case f_LogMessage_timestamp record of {Nothing -> return (); Just _v -> do
-    writeFieldBegin oprot ("timestamp",T_I64,2)
+    writeFieldBegin oprot ("timestamp",T_I64,1)
     writeI64 oprot _v
+    writeFieldEnd oprot}
+  case f_LogMessage_table record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("table",T_STRING,2)
+    writeString oprot _v
+    writeFieldEnd oprot}
+  case f_LogMessage_columns record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("columns",T_MAP,3)
+    (let {f [] = return (); f ((_kiter19,_viter20):t) = do {do {writeString oprot _kiter19;write_ColumnValue oprot _viter20};f t}} in do {writeMapBegin oprot (T_STRING,T_STRUCT,fromIntegral $ Map.size _v); f (Map.toList _v);writeMapEnd oprot})
     writeFieldEnd oprot}
   writeFieldStop oprot
   writeStructEnd oprot
@@ -114,15 +118,21 @@ read_LogMessage_fields iprot record = do
   (_,_t22,_id23) <- readFieldBegin iprot
   if _t22 == T_STOP then return record else
     case _id23 of 
-      1 -> if _t22 == T_MAP then do
-        s <- (let {f 0 = return []; f n = do {k <- readString iprot; v <- (read_ColumnValue iprot);r <- f (n-1); return $ (k,v):r}} in do {(_ktype25,_vtype26,_size24) <- readMapBegin iprot; l <- f _size24; return $ Map.fromList l})
-        read_LogMessage_fields iprot record{f_LogMessage_columns=Just s}
+      1 -> if _t22 == T_I64 then do
+        s <- readI64 iprot
+        read_LogMessage_fields iprot record{f_LogMessage_timestamp=Just s}
         else do
           skip iprot _t22
           read_LogMessage_fields iprot record
-      2 -> if _t22 == T_I64 then do
-        s <- readI64 iprot
-        read_LogMessage_fields iprot record{f_LogMessage_timestamp=Just s}
+      2 -> if _t22 == T_STRING then do
+        s <- readString iprot
+        read_LogMessage_fields iprot record{f_LogMessage_table=Just s}
+        else do
+          skip iprot _t22
+          read_LogMessage_fields iprot record
+      3 -> if _t22 == T_MAP then do
+        s <- (let {f 0 = return []; f n = do {k <- readString iprot; v <- (read_ColumnValue iprot);r <- f (n-1); return $ (k,v):r}} in do {(_ktype25,_vtype26,_size24) <- readMapBegin iprot; l <- f _size24; return $ Map.fromList l})
+        read_LogMessage_fields iprot record{f_LogMessage_columns=Just s}
         else do
           skip iprot _t22
           read_LogMessage_fields iprot record
@@ -132,7 +142,7 @@ read_LogMessage_fields iprot record = do
         read_LogMessage_fields iprot record
 read_LogMessage iprot = do
   _ <- readStructBegin iprot
-  record <- read_LogMessage_fields iprot (LogMessage{f_LogMessage_columns=Nothing,f_LogMessage_timestamp=Nothing})
+  record <- read_LogMessage_fields iprot (LogMessage{f_LogMessage_timestamp=Nothing,f_LogMessage_table=Nothing,f_LogMessage_columns=Nothing})
   readStructEnd iprot
   return record
 data LogResponse = LogResponse{f_LogResponse_code :: Maybe Int32,f_LogResponse_message :: Maybe Text} deriving (Show,Eq,Typeable)
