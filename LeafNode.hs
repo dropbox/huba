@@ -2,28 +2,34 @@
 
 module LeafNode (newLeafNodeHandler) where
 
-import Huba_Types
+-- import qualified Huba_Types as T
 
-import qualified LeafNodeService
-import LeafNodeService_Iface
+import ThriftInterface
 
-import Thrift()
-import Thrift.Protocol.Binary()
-import Thrift.Transport()
-import Thrift.Server
+import qualified LeafNodeService ()
 
-import Data.Vector (Vector())
+import Thrift ()
+import Thrift.Protocol.Binary ()
+import Thrift.Transport ()
+-- import Thrift.Server
+
+import Data.Vector (Vector(), foldl')
 import Control.Applicative ((<$>))
+import Data.List (insert)
 
+import Control.Concurrent.MVar(MVar(), newMVar, modifyMVar_, readMVar)
 
-data LeafNodeHandler = LeafNodeHandler
+data LeafNodeHandler = LeafNodeHandler (MVar [LogMessage])
 
 newLeafNodeHandler :: IO LeafNodeHandler
-newLeafNodeHandler = return LeafNodeHandler
+newLeafNodeHandler = LeafNodeHandler <$> newMVar []
 
-instance LeafNodeService_Iface LeafNodeHandler where
-  log :: LeafNodeHandler -> Maybe (Vector LogMessage) -> IO LogResponse
-  log _ (Just messages) = do
-    putStrLn $ "Got messages: " ++ show messages
-    putStrLn "log()"
-    return $ LogResponse (Just 0) Nothing
+instance LeafNodeService LeafNodeHandler where
+  log :: LeafNodeHandler -> Vector LogMessage -> IO LogResponse
+  log (LeafNodeHandler logs) message = do
+    putStrLn $ "LeafNode received message: " ++ show message
+    modifyMVar_ logs $ return . \ls -> foldl' (flip insert) ls message
+
+    logContents <- readMVar logs
+    putStrLn $ "Current contents" ++ show logContents
+    return $ LogResponse 0 "OK"

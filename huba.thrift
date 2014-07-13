@@ -62,18 +62,19 @@ union ColumnValue {
 }
 
 struct LogMessage {
-  1: map<ColumnName, ColumnValue> columns
-  2: i64 timestamp
+  1: i64 timestamp,
+  2: string table,
+  3: map<ColumnName, ColumnValue> columns,
 }
 
 struct LogResponse {
     1: i32 code,
-    2: string message
+    2: string message,
 }
 
 exception InvalidLogMessageException {
   1: i32 code,
-  2: string message
+  2: string message,
 }
 
 /**
@@ -89,14 +90,14 @@ service IngestorService {
 
 service AggregatorService {
 
-  QueryResponse query(1:Query query)
+  /* QueryResponse query(1:Query query) */
 
 }
 
 service LeafNodeService {
 
-  LogResponse log(1:list<LogMessage> logBatch),
+  LogResponse log(1:required list<LogMessage> logBatch),
 
-  QueryResponse query(1:Query query)
+  /* QueryResponse query(1:Query query) */
 
 }

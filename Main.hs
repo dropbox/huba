@@ -3,14 +3,27 @@ module Main where
 import Ingestor
 import qualified IngestorService
 
+import LeafNode
+import qualified LeafNodeService
+
 import Thrift.Server
+import Control.Concurrent.Thread (forkIO)
 
 
 main :: IO ()
-main =  do
-  handler <- newIngestorHandler
-  putStrLn "Starting the Ingestor..."
-  _ <- runBasicServer handler IngestorService.process 9090
-  putStrLn "done."
+main = do
+  (_, wait1) <- forkIO $ do
+    ingestorHandler <- newIngestorHandler
+    putStrLn "Starting the Ingestor..."
+    _ <- runBasicServer ingestorHandler IngestorService.process 9090
+    putStrLn "done."
 
-  putStrLn "Starting the Leaf Nodes..."
+  (_, wait2) <- forkIO $ do
+    leafHandler <- newLeafNodeHandler
+    putStrLn "Starting the Leaf Nodes..."
+    _ <- runBasicServer leafHandler LeafNodeService.process 9091
+    putStrLn "done."
+
+  _ <- wait1
+  _ <- wait2
+  return ()
