@@ -11,7 +11,7 @@ author:              Tom and David
 maintainer:          ddfisher@dropbox.com
 -- copyright:
 category:            Database
-build-type:          Simple
+build-type:          Custom
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
