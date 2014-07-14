@@ -44,22 +44,22 @@ write_Log_args oprot record = do
   writeStructBegin oprot "Log_args"
   case f_Log_args_logBatch record of {Nothing -> return (); Just _v -> do
     writeFieldBegin oprot ("logBatch",T_LIST,1)
-    (let f = Vector.mapM_ (\_viter79 -> write_LogMessage oprot _viter79) in do {writeListBegin oprot (T_STRUCT,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
+    (let f = Vector.mapM_ (\_viter113 -> write_LogMessage oprot _viter113) in do {writeListBegin oprot (T_STRUCT,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
     writeFieldEnd oprot}
   writeFieldStop oprot
   writeStructEnd oprot
 read_Log_args_fields iprot record = do
-  (_,_t81,_id82) <- readFieldBegin iprot
-  if _t81 == T_STOP then return record else
-    case _id82 of 
-      1 -> if _t81 == T_LIST then do
-        s <- (let f n = Vector.replicateM (fromIntegral n) ((read_LogMessage iprot)) in do {(_etype86,_size83) <- readListBegin iprot; f _size83})
+  (_,_t115,_id116) <- readFieldBegin iprot
+  if _t115 == T_STOP then return record else
+    case _id116 of 
+      1 -> if _t115 == T_LIST then do
+        s <- (let f n = Vector.replicateM (fromIntegral n) ((read_LogMessage iprot)) in do {(_etype120,_size117) <- readListBegin iprot; f _size117})
         read_Log_args_fields iprot record{f_Log_args_logBatch=Just s}
         else do
-          skip iprot _t81
+          skip iprot _t115
           read_Log_args_fields iprot record
       _ -> do
-        skip iprot _t81
+        skip iprot _t115
         readFieldEnd iprot
         read_Log_args_fields iprot record
 read_Log_args iprot = do
@@ -79,17 +79,17 @@ write_Log_result oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_Log_result_fields iprot record = do
-  (_,_t91,_id92) <- readFieldBegin iprot
-  if _t91 == T_STOP then return record else
-    case _id92 of 
-      0 -> if _t91 == T_STRUCT then do
+  (_,_t125,_id126) <- readFieldBegin iprot
+  if _t125 == T_STOP then return record else
+    case _id126 of 
+      0 -> if _t125 == T_STRUCT then do
         s <- (read_LogResponse iprot)
         read_Log_result_fields iprot record{f_Log_result_success=Just s}
         else do
-          skip iprot _t91
+          skip iprot _t125
           read_Log_result_fields iprot record
       _ -> do
-        skip iprot _t91
+        skip iprot _t125
         readFieldEnd iprot
         read_Log_result_fields iprot record
 read_Log_result iprot = do
