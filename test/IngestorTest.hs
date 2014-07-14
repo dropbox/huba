@@ -2,23 +2,13 @@
 module Main where
 
 
-import ThriftInterface
-import qualified Huba_Types
-
--- import Ingestor
--- import Ingestor_Iface
+import Shared.Thrift.Interface
 import qualified IngestorService_Client as Client
 
 import Thrift
 import Thrift.Protocol.Binary
--- import Thrift.Transport
 import Thrift.Transport.Handle
--- import Thrift.Server
 
--- import Control.Exception
--- import Data.Maybe
--- import Data.Text.Lazy
--- import Text.Printf
 import Network
 
 
@@ -41,4 +31,3 @@ main = do
 
 simpleLogMessage :: LogMessage
 simpleLogMessage = LogMessage 0 "some-table" [("key", StringValue "some string value")]
-  -- where col = ColumnValue (Just "some string value") Nothing Nothing Nothing

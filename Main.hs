@@ -1,9 +1,9 @@
 module Main where
 
-import Ingestor
+import Ingestor.Server
 import qualified IngestorService
 
-import LeafNode
+import LeafNode.Server
 import qualified LeafNodeService
 
 import Thrift.Server
