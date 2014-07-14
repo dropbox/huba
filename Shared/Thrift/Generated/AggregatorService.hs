@@ -37,7 +37,79 @@ import Huba_Types
 import qualified AggregatorService_Iface as Iface
 -- HELPER FUNCTIONS AND STRUCTURES --
 
+data Query_args = Query_args{f_Query_args_query :: Maybe Query} deriving (Show,Eq,Typeable)
+instance Hashable Query_args where
+  hashWithSalt salt record = salt   `hashWithSalt` f_Query_args_query record  
+write_Query_args oprot record = do
+  writeStructBegin oprot "Query_args"
+  case f_Query_args_query record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("query",T_STRUCT,1)
+    write_Query oprot _v
+    writeFieldEnd oprot}
+  writeFieldStop oprot
+  writeStructEnd oprot
+read_Query_args_fields iprot record = do
+  (_,_t96,_id97) <- readFieldBegin iprot
+  if _t96 == T_STOP then return record else
+    case _id97 of 
+      1 -> if _t96 == T_STRUCT then do
+        s <- (read_Query iprot)
+        read_Query_args_fields iprot record{f_Query_args_query=Just s}
+        else do
+          skip iprot _t96
+          read_Query_args_fields iprot record
+      _ -> do
+        skip iprot _t96
+        readFieldEnd iprot
+        read_Query_args_fields iprot record
+read_Query_args iprot = do
+  _ <- readStructBegin iprot
+  record <- read_Query_args_fields iprot (Query_args{f_Query_args_query=Nothing})
+  readStructEnd iprot
+  return record
+data Query_result = Query_result{f_Query_result_success :: Maybe QueryResponse} deriving (Show,Eq,Typeable)
+instance Hashable Query_result where
+  hashWithSalt salt record = salt   `hashWithSalt` f_Query_result_success record  
+write_Query_result oprot record = do
+  writeStructBegin oprot "Query_result"
+  case f_Query_result_success record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("success",T_STRUCT,0)
+    write_QueryResponse oprot _v
+    writeFieldEnd oprot}
+  writeFieldStop oprot
+  writeStructEnd oprot
+read_Query_result_fields iprot record = do
+  (_,_t101,_id102) <- readFieldBegin iprot
+  if _t101 == T_STOP then return record else
+    case _id102 of 
+      0 -> if _t101 == T_STRUCT then do
+        s <- (read_QueryResponse iprot)
+        read_Query_result_fields iprot record{f_Query_result_success=Just s}
+        else do
+          skip iprot _t101
+          read_Query_result_fields iprot record
+      _ -> do
+        skip iprot _t101
+        readFieldEnd iprot
+        read_Query_result_fields iprot record
+read_Query_result iprot = do
+  _ <- readStructBegin iprot
+  record <- read_Query_result_fields iprot (Query_result{f_Query_result_success=Nothing})
+  readStructEnd iprot
+  return record
+process_query (seqid, iprot, oprot, handler) = do
+  args <- read_Query_args iprot
+  readMessageEnd iprot
+  rs <- return (Query_result Nothing)
+  res <- (do
+    res <- Iface.query handler (f_Query_args_query args)
+    return rs{f_Query_result_success= Just res})
+  writeMessageBegin oprot ("query", M_REPLY, seqid);
+  write_Query_result oprot res
+  writeMessageEnd oprot
+  tFlush (getTransport oprot)
 proc_ handler (iprot,oprot) (name,typ,seqid) = case name of
+  "query" -> process_query (seqid,iprot,oprot,handler)
   _ -> do
     skip iprot T_STRUCT
     readMessageEnd iprot

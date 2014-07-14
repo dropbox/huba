@@ -12,7 +12,7 @@
 -- DO NOT EDIT UNLESS YOU ARE SURE YOU KNOW WHAT YOU ARE DOING --
 -----------------------------------------------------------------
 
-module LeafNodeService_Client(log) where
+module LeafNodeService_Client(log,query) where
 import Data.IORef
 import Prelude ( Bool(..), Enum, Double, String, Maybe(..),
                  Eq, Show, Ord,
@@ -60,3 +60,26 @@ recv_log ip = do
     Just v -> return v
     Nothing -> do
       throw (AppExn AE_MISSING_RESULT "log failed: unknown result")
+query (ip,op) arg_query = do
+  send_query op arg_query
+  recv_query ip
+send_query op arg_query = do
+  seq <- seqid
+  seqn <- readIORef seq
+  writeMessageBegin op ("query", M_CALL, seqn)
+  write_Query_args op (Query_args{f_Query_args_query=Just arg_query})
+  writeMessageEnd op
+  tFlush (getTransport op)
+recv_query ip = do
+  (fname, mtype, rseqid) <- readMessageBegin ip
+  if mtype == M_EXCEPTION then do
+    x <- readAppExn ip
+    readMessageEnd ip
+    throw x
+    else return ()
+  res <- read_Query_result ip
+  readMessageEnd ip
+  case f_Query_result_success res of
+    Just v -> return v
+    Nothing -> do
+      throw (AppExn AE_MISSING_RESULT "query failed: unknown result")
