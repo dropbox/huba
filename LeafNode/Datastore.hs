@@ -7,4 +7,4 @@ import Data.List (insert)
 type LeafStore = [LogMessage]
 
 ingestBatch :: LeafStore -> LogBatch -> LeafStore
-ingestBatch store batch = foldl' (flip insert) store batch
+ingestBatch = foldl' (flip insert)
