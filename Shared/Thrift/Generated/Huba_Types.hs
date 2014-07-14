@@ -33,6 +33,50 @@ import Thrift
 import Thrift.Types ()
 
 
+data AggregationFunction = CONSTANT|COUNT|MIN|MAX|SUM|AVERAGE|SUM_PER_MINUTE|HISTOGRAM  deriving (Show,Eq, Typeable, Ord)
+instance Enum AggregationFunction where
+  fromEnum t = case t of
+    CONSTANT -> 0
+    COUNT -> 1
+    MIN -> 2
+    MAX -> 3
+    SUM -> 4
+    AVERAGE -> 5
+    SUM_PER_MINUTE -> 6
+    HISTOGRAM -> 7
+  toEnum t = case t of
+    0 -> CONSTANT
+    1 -> COUNT
+    2 -> MIN
+    3 -> MAX
+    4 -> SUM
+    5 -> AVERAGE
+    6 -> SUM_PER_MINUTE
+    7 -> HISTOGRAM
+    _ -> throw ThriftException
+instance Hashable AggregationFunction where
+  hashWithSalt salt = hashWithSalt salt . fromEnum
+data ComparisonFunction = EQ|NEQ|REGEXP_EQ|GT|LT|GTE|LTE  deriving (Show,Eq, Typeable, Ord)
+instance Enum ComparisonFunction where
+  fromEnum t = case t of
+    EQ -> 1
+    NEQ -> 2
+    REGEXP_EQ -> 3
+    GT -> 4
+    LT -> 5
+    GTE -> 6
+    LTE -> 7
+  toEnum t = case t of
+    1 -> EQ
+    2 -> NEQ
+    3 -> REGEXP_EQ
+    4 -> GT
+    5 -> LT
+    6 -> GTE
+    7 -> LTE
+    _ -> throw ThriftException
+instance Hashable ComparisonFunction where
+  hashWithSalt salt = hashWithSalt salt . fromEnum
 type ColumnName = Text
 
 data ColumnValue = ColumnValue{f_ColumnValue_stringValue :: Maybe Text,f_ColumnValue_intValue :: Maybe Int64,f_ColumnValue_stringSet :: Maybe (Set.HashSet Text),f_ColumnValue_stringVector :: Maybe (Vector.Vector Text)} deriving (Show,Eq,Typeable)
@@ -224,5 +268,235 @@ read_InvalidLogMessageException_fields iprot record = do
 read_InvalidLogMessageException iprot = do
   _ <- readStructBegin iprot
   record <- read_InvalidLogMessageException_fields iprot (InvalidLogMessageException{f_InvalidLogMessageException_code=Nothing,f_InvalidLogMessageException_message=Nothing})
+  readStructEnd iprot
+  return record
+data ColumnExpression = ColumnExpression{f_ColumnExpression_column :: Maybe Text,f_ColumnExpression_aggregationFunction :: Maybe AggregationFunction} deriving (Show,Eq,Typeable)
+instance Hashable ColumnExpression where
+  hashWithSalt salt record = salt   `hashWithSalt` f_ColumnExpression_column record   `hashWithSalt` f_ColumnExpression_aggregationFunction record  
+write_ColumnExpression oprot record = do
+  writeStructBegin oprot "ColumnExpression"
+  case f_ColumnExpression_column record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("column",T_STRING,1)
+    writeString oprot _v
+    writeFieldEnd oprot}
+  case f_ColumnExpression_aggregationFunction record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("aggregationFunction",T_I32,2)
+    writeI32 oprot (fromIntegral $ fromEnum _v)
+    writeFieldEnd oprot}
+  writeFieldStop oprot
+  writeStructEnd oprot
+read_ColumnExpression_fields iprot record = do
+  (_,_t42,_id43) <- readFieldBegin iprot
+  if _t42 == T_STOP then return record else
+    case _id43 of 
+      1 -> if _t42 == T_STRING then do
+        s <- readString iprot
+        read_ColumnExpression_fields iprot record{f_ColumnExpression_column=Just s}
+        else do
+          skip iprot _t42
+          read_ColumnExpression_fields iprot record
+      2 -> if _t42 == T_I32 then do
+        s <- (do {i <- readI32 iprot; return $ toEnum $ fromIntegral i})
+        read_ColumnExpression_fields iprot record{f_ColumnExpression_aggregationFunction=Just s}
+        else do
+          skip iprot _t42
+          read_ColumnExpression_fields iprot record
+      _ -> do
+        skip iprot _t42
+        readFieldEnd iprot
+        read_ColumnExpression_fields iprot record
+read_ColumnExpression iprot = do
+  _ <- readStructBegin iprot
+  record <- read_ColumnExpression_fields iprot (ColumnExpression{f_ColumnExpression_column=Nothing,f_ColumnExpression_aggregationFunction=Nothing})
+  readStructEnd iprot
+  return record
+data Condition = Condition{f_Condition_column :: Maybe Text,f_Condition_comparisonFunction :: Maybe ComparisonFunction,f_Condition_value :: Maybe ColumnValue} deriving (Show,Eq,Typeable)
+instance Hashable Condition where
+  hashWithSalt salt record = salt   `hashWithSalt` f_Condition_column record   `hashWithSalt` f_Condition_comparisonFunction record   `hashWithSalt` f_Condition_value record  
+write_Condition oprot record = do
+  writeStructBegin oprot "Condition"
+  case f_Condition_column record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("column",T_STRING,1)
+    writeString oprot _v
+    writeFieldEnd oprot}
+  case f_Condition_comparisonFunction record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("comparisonFunction",T_I32,2)
+    writeI32 oprot (fromIntegral $ fromEnum _v)
+    writeFieldEnd oprot}
+  case f_Condition_value record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("value",T_STRUCT,3)
+    write_ColumnValue oprot _v
+    writeFieldEnd oprot}
+  writeFieldStop oprot
+  writeStructEnd oprot
+read_Condition_fields iprot record = do
+  (_,_t47,_id48) <- readFieldBegin iprot
+  if _t47 == T_STOP then return record else
+    case _id48 of 
+      1 -> if _t47 == T_STRING then do
+        s <- readString iprot
+        read_Condition_fields iprot record{f_Condition_column=Just s}
+        else do
+          skip iprot _t47
+          read_Condition_fields iprot record
+      2 -> if _t47 == T_I32 then do
+        s <- (do {i <- readI32 iprot; return $ toEnum $ fromIntegral i})
+        read_Condition_fields iprot record{f_Condition_comparisonFunction=Just s}
+        else do
+          skip iprot _t47
+          read_Condition_fields iprot record
+      3 -> if _t47 == T_STRUCT then do
+        s <- (read_ColumnValue iprot)
+        read_Condition_fields iprot record{f_Condition_value=Just s}
+        else do
+          skip iprot _t47
+          read_Condition_fields iprot record
+      _ -> do
+        skip iprot _t47
+        readFieldEnd iprot
+        read_Condition_fields iprot record
+read_Condition iprot = do
+  _ <- readStructBegin iprot
+  record <- read_Condition_fields iprot (Condition{f_Condition_column=Nothing,f_Condition_comparisonFunction=Nothing,f_Condition_value=Nothing})
+  readStructEnd iprot
+  return record
+data Query = Query{f_Query_columnExpressions :: Maybe (Vector.Vector ColumnExpression),f_Query_table :: Maybe Text,f_Query_timeStart :: Maybe Int64,f_Query_timeEnd :: Maybe Int64,f_Query_conditions :: Maybe (Vector.Vector Condition),f_Query_groupBy :: Maybe (Vector.Vector Text),f_Query_orderBy :: Maybe Int32,f_Query_limit :: Maybe Int32} deriving (Show,Eq,Typeable)
+instance Hashable Query where
+  hashWithSalt salt record = salt   `hashWithSalt` f_Query_columnExpressions record   `hashWithSalt` f_Query_table record   `hashWithSalt` f_Query_timeStart record   `hashWithSalt` f_Query_timeEnd record   `hashWithSalt` f_Query_conditions record   `hashWithSalt` f_Query_groupBy record   `hashWithSalt` f_Query_orderBy record   `hashWithSalt` f_Query_limit record  
+write_Query oprot record = do
+  writeStructBegin oprot "Query"
+  case f_Query_columnExpressions record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("columnExpressions",T_LIST,1)
+    (let f = Vector.mapM_ (\_viter51 -> write_ColumnExpression oprot _viter51) in do {writeListBegin oprot (T_STRUCT,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
+    writeFieldEnd oprot}
+  case f_Query_table record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("table",T_STRING,2)
+    writeString oprot _v
+    writeFieldEnd oprot}
+  case f_Query_timeStart record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("timeStart",T_I64,3)
+    writeI64 oprot _v
+    writeFieldEnd oprot}
+  case f_Query_timeEnd record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("timeEnd",T_I64,4)
+    writeI64 oprot _v
+    writeFieldEnd oprot}
+  case f_Query_conditions record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("conditions",T_LIST,5)
+    (let f = Vector.mapM_ (\_viter52 -> write_Condition oprot _viter52) in do {writeListBegin oprot (T_STRUCT,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
+    writeFieldEnd oprot}
+  case f_Query_groupBy record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("groupBy",T_LIST,6)
+    (let f = Vector.mapM_ (\_viter53 -> writeString oprot _viter53) in do {writeListBegin oprot (T_STRING,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
+    writeFieldEnd oprot}
+  case f_Query_orderBy record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("orderBy",T_I32,7)
+    writeI32 oprot _v
+    writeFieldEnd oprot}
+  case f_Query_limit record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("limit",T_I32,8)
+    writeI32 oprot _v
+    writeFieldEnd oprot}
+  writeFieldStop oprot
+  writeStructEnd oprot
+read_Query_fields iprot record = do
+  (_,_t55,_id56) <- readFieldBegin iprot
+  if _t55 == T_STOP then return record else
+    case _id56 of 
+      1 -> if _t55 == T_LIST then do
+        s <- (let f n = Vector.replicateM (fromIntegral n) ((read_ColumnExpression iprot)) in do {(_etype60,_size57) <- readListBegin iprot; f _size57})
+        read_Query_fields iprot record{f_Query_columnExpressions=Just s}
+        else do
+          skip iprot _t55
+          read_Query_fields iprot record
+      2 -> if _t55 == T_STRING then do
+        s <- readString iprot
+        read_Query_fields iprot record{f_Query_table=Just s}
+        else do
+          skip iprot _t55
+          read_Query_fields iprot record
+      3 -> if _t55 == T_I64 then do
+        s <- readI64 iprot
+        read_Query_fields iprot record{f_Query_timeStart=Just s}
+        else do
+          skip iprot _t55
+          read_Query_fields iprot record
+      4 -> if _t55 == T_I64 then do
+        s <- readI64 iprot
+        read_Query_fields iprot record{f_Query_timeEnd=Just s}
+        else do
+          skip iprot _t55
+          read_Query_fields iprot record
+      5 -> if _t55 == T_LIST then do
+        s <- (let f n = Vector.replicateM (fromIntegral n) ((read_Condition iprot)) in do {(_etype65,_size62) <- readListBegin iprot; f _size62})
+        read_Query_fields iprot record{f_Query_conditions=Just s}
+        else do
+          skip iprot _t55
+          read_Query_fields iprot record
+      6 -> if _t55 == T_LIST then do
+        s <- (let f n = Vector.replicateM (fromIntegral n) (readString iprot) in do {(_etype70,_size67) <- readListBegin iprot; f _size67})
+        read_Query_fields iprot record{f_Query_groupBy=Just s}
+        else do
+          skip iprot _t55
+          read_Query_fields iprot record
+      7 -> if _t55 == T_I32 then do
+        s <- readI32 iprot
+        read_Query_fields iprot record{f_Query_orderBy=Just s}
+        else do
+          skip iprot _t55
+          read_Query_fields iprot record
+      8 -> if _t55 == T_I32 then do
+        s <- readI32 iprot
+        read_Query_fields iprot record{f_Query_limit=Just s}
+        else do
+          skip iprot _t55
+          read_Query_fields iprot record
+      _ -> do
+        skip iprot _t55
+        readFieldEnd iprot
+        read_Query_fields iprot record
+read_Query iprot = do
+  _ <- readStructBegin iprot
+  record <- read_Query_fields iprot (Query{f_Query_columnExpressions=Nothing,f_Query_table=Nothing,f_Query_timeStart=Nothing,f_Query_timeEnd=Nothing,f_Query_conditions=Nothing,f_Query_groupBy=Nothing,f_Query_orderBy=Nothing,f_Query_limit=Nothing})
+  readStructEnd iprot
+  return record
+data QueryResponse = QueryResponse{f_QueryResponse_code :: Maybe Int32,f_QueryResponse_message :: Maybe Text} deriving (Show,Eq,Typeable)
+instance Hashable QueryResponse where
+  hashWithSalt salt record = salt   `hashWithSalt` f_QueryResponse_code record   `hashWithSalt` f_QueryResponse_message record  
+write_QueryResponse oprot record = do
+  writeStructBegin oprot "QueryResponse"
+  case f_QueryResponse_code record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("code",T_I32,1)
+    writeI32 oprot _v
+    writeFieldEnd oprot}
+  case f_QueryResponse_message record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("message",T_STRING,2)
+    writeString oprot _v
+    writeFieldEnd oprot}
+  writeFieldStop oprot
+  writeStructEnd oprot
+read_QueryResponse_fields iprot record = do
+  (_,_t75,_id76) <- readFieldBegin iprot
+  if _t75 == T_STOP then return record else
+    case _id76 of 
+      1 -> if _t75 == T_I32 then do
+        s <- readI32 iprot
+        read_QueryResponse_fields iprot record{f_QueryResponse_code=Just s}
+        else do
+          skip iprot _t75
+          read_QueryResponse_fields iprot record
+      2 -> if _t75 == T_STRING then do
+        s <- readString iprot
+        read_QueryResponse_fields iprot record{f_QueryResponse_message=Just s}
+        else do
+          skip iprot _t75
+          read_QueryResponse_fields iprot record
+      _ -> do
+        skip iprot _t75
+        readFieldEnd iprot
+        read_QueryResponse_fields iprot record
+read_QueryResponse iprot = do
+  _ <- readStructBegin iprot
+  record <- read_QueryResponse_fields iprot (QueryResponse{f_QueryResponse_code=Nothing,f_QueryResponse_message=Nothing})
   readStructEnd iprot
   return record

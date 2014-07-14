@@ -36,3 +36,4 @@ import Thrift.Types ()
 import Huba_Types
 
 class AggregatorService_Iface a where
+  query :: a -> Maybe Query -> IO QueryResponse

@@ -54,28 +54,88 @@ namespace hs HubaThrift
  */
 typedef string ColumnName
 
+/*** Logging data structures ***/
+
 union ColumnValue {
-    1: string stringValue,
-    2: i64 intValue,
-    3: set<string> stringSet,
-    4: list<string> stringVector,
+  1: string stringValue,
+  2: i64 intValue,
+  3: set<string> stringSet,
+  4: list<string> stringVector,
 }
 
 struct LogMessage {
-  1: i64 timestamp,
-  2: string table,
-  3: map<ColumnName, ColumnValue> columns,
+  1: required i64 timestamp,
+  2: required string table,
+  3: required map<ColumnName, ColumnValue> columns,
 }
 
 struct LogResponse {
-    1: i32 code,
-    2: string message,
+  1: required i32 code,
+  2: required string message,
 }
 
 exception InvalidLogMessageException {
-  1: i32 code,
-  2: string message,
+  1: required i32 code,
+  2: required string message,
 }
+
+
+/*** Querying data structures ***/
+
+enum AggregationFunction {
+  CONSTANT = 0,
+
+  COUNT = 1,
+  MIN = 2,
+  MAX = 3,
+  SUM = 4,
+  AVERAGE = 5,
+
+  SUM_PER_MINUTE = 6,
+  HISTOGRAM = 7,
+
+  // IDEA: can we just pass functions in directly somehow?
+  // A general aggregation function looks like State -> Column -> State
+}
+
+struct ColumnExpression {
+  1: required string column,
+  2: required AggregationFunction aggregationFunction = Aggregationfunction.CONSTANT,
+}
+
+enum ComparisonFunction {
+  EQ = 1,
+  NEQ = 2,
+  REGEXP_EQ = 3,
+
+  GT = 4,
+  LT = 5,
+  GTE = 6,
+  LTE = 7,
+}
+
+struct Condition {
+  1: required string column,
+  2: required ComparisonFunction comparisonFunction,
+  3: required ColumnValue value,
+}
+
+struct Query {
+  1: required list<ColumnExpression> columnExpressions,
+  2: required string table,
+  3: required i64 timeStart
+  4: required i64 timeEnd
+  5: optional list <Condition> conditions = [],
+  6: optional list<string> groupBy = [],
+  7: optional i32 orderBy,
+  8: optional i32 limit = 1000
+}
+
+struct QueryResponse {
+  1: required i32 code,
+  2: required string message,
+}
+
 
 /**
  * Services just need a name and can optionally inherit from another service using the extends keyword.
@@ -90,7 +150,7 @@ service IngestorService {
 
 service AggregatorService {
 
-  /* QueryResponse query(1:Query query) */
+  QueryResponse query(1:Query query)
 
 }
 
@@ -98,6 +158,6 @@ service LeafNodeService {
 
   LogResponse log(1:required list<LogMessage> logBatch),
 
-  /* QueryResponse query(1:Query query) */
+  QueryResponse query(1:Query query)
 
 }

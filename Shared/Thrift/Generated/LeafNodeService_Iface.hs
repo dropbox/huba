@@ -37,3 +37,4 @@ import Huba_Types
 
 class LeafNodeService_Iface a where
   log :: a -> Maybe (Vector.Vector LogMessage) -> IO LogResponse
+  query :: a -> Maybe Query -> IO QueryResponse
