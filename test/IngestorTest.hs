@@ -2,8 +2,7 @@
 module Main where
 
 
-import ThriftInterface
-import qualified Huba_Types
+import Shared.Thrift.Interface
 
 -- import Ingestor
 -- import Ingestor_Iface
