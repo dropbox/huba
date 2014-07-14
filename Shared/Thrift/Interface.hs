@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, FlexibleInstances, ViewPatterns #-}
-module ThriftInterface where
+module Shared.Thrift.Interface where
 
 import qualified Huba_Types as T
 import qualified LeafNodeService_Iface as T
+import qualified IngestorService_Iface as T
 import qualified Data.HashSet as Set
 import qualified Data.HashMap.Lazy as Map
 import qualified Data.Vector as Vector
@@ -31,6 +32,8 @@ instance Ord LogMessage where
         where orComparing comp f x x' = case comp x x' of
                                               EQ -> comparing f x x'
                                               o -> o
+
+type LogBatch = Vector.Vector LogMessage
 
 data LogResponse = LogResponse { lrCode :: Int32
                               , lrMessage :: Text
@@ -70,9 +73,16 @@ instance (TypeEquiv t1 t2, Traversable c) => TypeEquiv (c t1) (c t2) where
 
 
 class LeafNodeService t where
-    log :: t -> Vector.Vector LogMessage -> IO LogResponse
-
+    logLeaf :: t -> LogBatch -> IO LogResponse
 
 instance (LeafNodeService t) => T.LeafNodeService_Iface t where
-    log h ((>>= fromThrift) -> Just message) = toThrift <$> ThriftInterface.log h message
+    log h ((>>= fromThrift) -> Just message) = toThrift <$> logLeaf h message
+    log _ _ = return $ toThrift $ LogResponse (-1) "Invalid LogMessage!"
+
+
+class IngestorService t where
+    logIngest :: t -> LogBatch -> IO LogResponse
+
+instance (IngestorService t) => T.IngestorService_Iface t where
+    log h ((>>= fromThrift) -> Just message) = toThrift <$> logIngest h message
     log _ _ = return $ toThrift $ LogResponse (-1) "Invalid LogMessage!"
