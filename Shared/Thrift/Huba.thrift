@@ -131,9 +131,23 @@ struct Query {
   8: optional i32 limit = 1000
 }
 
+union ResponseValue {
+  1: string stringValue,
+  2: i64 intValue,
+  3: set<string> stringSet,
+  4: list<string> stringVector,
+  5: double doubleValue,
+  6: bool isNull,
+}
+
+struct Row {
+  1: required list<ResponseValue> values,
+}
+
 struct QueryResponse {
   1: required i32 code,
-  2: required string message,
+  2: optional string message,
+  3: optional list<Row> rows,
 }
 
 
