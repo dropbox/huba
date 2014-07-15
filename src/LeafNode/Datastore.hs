@@ -2,8 +2,8 @@
 
 module LeafNode.Datastore (LeafStore(), ingestBatch, query) where
 
-import Shared.Thrift.Types
-import Shared.Thrift.Interface as I
+import Shared.Thrift.Types as T
+import Shared.Thrift.Interface
 import Shared.Comparison
 
 import qualified Data.Vector as V
@@ -31,15 +31,15 @@ getColFromMessage name msg = msg ^. lmColumns . at name
 
 
 makeCondition :: Condition -> (LogMessage -> Bool)
-makeCondition (Condition col comp val) msg = let compFn = case comp of I.EQ -> columnValueEQ
-                                                                       I.NEQ -> columnValueNEQ
+makeCondition (Condition col comp val) msg = let compFn = case comp of T.EQ -> columnValueEQ
+                                                                       T.NEQ -> columnValueNEQ
 
-                                                                       I.GT -> columnValueGT
-                                                                       I.LT -> columnValueLT
-                                                                       I.GTE -> columnValueGTE
-                                                                       I.LTE -> columnValueLTE
+                                                                       T.GT -> columnValueGT
+                                                                       T.LT -> columnValueLT
+                                                                       T.GTE -> columnValueGTE
+                                                                       T.LTE -> columnValueLTE
 
-                                                                       I.REGEXP_EQ -> columnValueREGEXPEQ in
+                                                                       T.REGEXP_EQ -> columnValueREGEXPEQ in
 
   fromMaybe False $ do
     colValue <- getColFromMessage col msg
