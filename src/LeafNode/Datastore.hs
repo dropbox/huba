@@ -1,14 +1,18 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, OverloadedLists #-}
 
-module LeafNode.Datastore (LeafStore(), ingestBatch) where
+module LeafNode.Datastore (LeafStore(), ingestBatch, query) where
 
 import Shared.Thrift.Types
 import Shared.Thrift.Interface as I
+import Shared.Comparison
+
 import qualified Data.Vector as V
-import Data.List (insert)
+import Data.List (insert, sortBy)
 
 import Control.Lens
 import Data.Maybe (fromMaybe)
+
+import Data.Int (Int32)
 
 type LeafStore = [LogMessage]
 
@@ -21,34 +25,69 @@ getMessagesInTimeRange store timeStart timeEnd = filter
                                                  (\x -> ((x ^. lmTimestamp) >= timeStart) && ((x ^. lmTimestamp) <= timeEnd))
                                                  store
 
-makeCondition :: Condition -> (LogMessage -> Bool)
-makeCondition (Condition col comp val) = undefined
-  where compFn I.EQ        = (==) -- applies to all types
-        compFn I.NEQ       = (/=)
-
-        compFn I.GT        = (>)
-        compFn I.LT        = (<)
-        compFn I.GTE       = (>=)
-        compFn I.LTE       = (<=)
-
-        compFn I.REGEXP_EQ = undefined
 
 getColFromMessage :: ColumnName -> LogMessage -> Maybe ColumnValue
 getColFromMessage name msg = msg ^. lmColumns . at name
 
--- makeFn :: ColumnName -> ColumnValue -> (a -> a -> Bool) -> LogMessage -> Bool
--- makeFn col val compFn msg = fromMaybe False $ do
---   colValue <- getColFromMessage col msg
---   return colValue `compFn` val
+
+makeCondition :: Condition -> (LogMessage -> Bool)
+makeCondition (Condition col comp val) msg = let compFn = case comp of I.EQ -> columnValueEQ
+                                                                       I.NEQ -> columnValueNEQ
+
+                                                                       I.GT -> columnValueGT
+                                                                       I.LT -> columnValueLT
+                                                                       I.GTE -> columnValueGTE
+                                                                       I.LTE -> columnValueLTE
+
+                                                                       I.REGEXP_EQ -> columnValueREGEXPEQ in
+
+  fromMaybe False $ do
+    colValue <- getColFromMessage col msg
+    return (colValue `compFn` val)
+
+
 
 
 makeConditions :: [Condition] -> (LogMessage -> Bool)
 makeConditions conditions message = all (($ message) . makeCondition) conditions
 
--- answerQuery :: LeafStore -> Query -> QueryResponse
--- answerQuery store q = QueryResponse 0 (Just "asdf") Nothing
---     where queriesInTimeRange = getMessagesInTimeRange store (qTimeStart q) (qTimeEnd q)
---           filteredQueries = filter (makeCondition (qConditions q)) queriesInTimeRange
+getSortByFn :: Query -> Int32 -> (Row -> Row -> Ordering)
+getSortByFn = undefined
+
+processRows :: Query -> [LogMessage] -> [Row] -- TODO: let's rename Row to ResponseRow
+processRows q rows = undefined
+
+
+query :: LeafStore -> Query -> QueryResponse
+query store q = QueryResponse 0 (Just "asdf") (Just $ V.fromList responseRows)
+    where
+      -- Get the rows in the desired time range
+      rowsInTimeRange = getMessagesInTimeRange store (q ^. qTimeStart) (q ^. qTimeEnd)
+
+      filterFn = let conditionFn = case q ^. qConditions of
+                                     Nothing -> const True
+                                     Just conditions -> makeConditions $ V.toList conditions in
+                 filter conditionFn
+                 -- TODO: let's make conditions a [Condition] instead of a Vector Condition, yes?
+
+      processFn = processRows q
+
+      sortFn = case q ^. qOrderBy of
+                 Nothing -> id
+                 Just orderByIndex -> sortBy (getSortByFn q orderByIndex)
+
+      limitFn = case q ^. qLimit of
+                  Nothing -> id
+                  Just n -> take (fromIntegral n :: Int)
+                  -- TODO: let's make qLimit and qOrderBy Int instead of Int32
+
+      responseRows = (limitFn . sortFn . processFn . filterFn) rowsInTimeRange
+      -- TODO: make sure the sort interacts with the limit/processing efficiently here.
+      -- Taking k things from a sorted list of length n shouldn't take n log n.
+      -- You can do faster with a quicksort that ignores the part of the list it doesn't
+      -- need to sort.
+      -- Alternatively you can do n log k by continually doing sorted insert (and delete)
+      -- into a binary tree of size k
 
 
 
