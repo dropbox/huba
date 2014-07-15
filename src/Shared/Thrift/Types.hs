@@ -60,8 +60,8 @@ data Query = Query { _qColumnExpressions :: Vector ColumnExpression
                    , _qTimeEnd :: Timestamp
                    , _qConditions :: Maybe (Vector Condition)
                    , _qGroupBy :: Maybe (Vector ColumnName)
-                   , _qOrderBy :: Maybe Int32
-                   , _qLimit :: Maybe Int32
+                   , _qOrderBy :: Maybe Int
+                   , _qLimit :: Maybe Int
                    }
   deriving (Show,Eq)
 

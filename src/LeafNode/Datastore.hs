@@ -51,8 +51,7 @@ makeCondition (Condition col comp val) msg = let compFn = case comp of I.EQ -> c
 makeConditions :: [Condition] -> (LogMessage -> Bool)
 makeConditions conditions message = all (($ message) . makeCondition) conditions
 
-getSortByFn :: Query -> Int32 -> (Row -> Row -> Ordering)
-getSortByFn = undefined
+getSortByFn :: Int -> (Row -> Row -> Ordering)
 
 processRows :: Query -> [LogMessage] -> [Row] -- TODO: let's rename Row to ResponseRow
 processRows q rows = undefined
@@ -78,8 +77,7 @@ query store q = QueryResponse 0 (Just "asdf") (Just $ V.fromList responseRows)
 
       limitFn = case q ^. qLimit of
                   Nothing -> id
-                  Just n -> take (fromIntegral n :: Int)
-                  -- TODO: let's make qLimit and qOrderBy Int instead of Int32
+                  Just n -> take n
 
       responseRows = (limitFn . sortFn . processFn . filterFn) rowsInTimeRange
       -- TODO: make sure the sort interacts with the limit/processing efficiently here.

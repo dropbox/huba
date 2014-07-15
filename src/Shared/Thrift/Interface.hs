@@ -14,6 +14,7 @@ import qualified IngestorService_Iface as T
 import Control.Applicative ((<$>), (<*>))
 import Data.Traversable (Traversable(traverse))
 import qualified Data.HashMap.Lazy as Map
+import Data.Int (Int32)
 
 class TypeEquiv haskType thriftType | haskType -> thriftType, thriftType -> haskType where
     toThrift :: haskType -> thriftType
@@ -50,9 +51,15 @@ instance TypeEquiv Condition T.Condition where
     toThrift (Condition c cf v) = T.Condition (Just c) (Just cf) (Just $ toThrift v)
     fromThrift (T.Condition mc mcf mv) = Condition <$> mc <*> mcf <*> (mv >>= fromThrift)
 
+intToInt32 :: Int -> Int32
+intToInt32 = fromInteger . toInteger
+
+int32ToInt :: Int32 -> Int
+int32ToInt = fromInteger . toInteger
+
 instance TypeEquiv Query T.Query where
-    toThrift (Query ce t ts te mc mg mo ml) = T.Query (Just $ toThrift ce) (Just t) (Just ts) (Just te) (toThrift <$> mc) mg mo ml
-    fromThrift (T.Query mce mt mts mte mc mg mo ml) = Query <$> (mce >>= fromThrift) <*> mt <*> mts <*> mte <*> (fromThrift <$> mc) <*> Just mg <*> Just mo <*> Just ml
+    toThrift (Query ce t ts te mc mg mo ml) = T.Query (Just $ toThrift ce) (Just t) (Just ts) (Just te) (toThrift <$> mc) mg (intToInt32 <$> mo) (intToInt32 <$> ml)
+    fromThrift (T.Query mce mt mts mte mc mg mo ml) = Query <$> (mce >>= fromThrift) <*> mt <*> mts <*> mte <*> (fromThrift <$> mc) <*> Just mg <*> Just (int32ToInt <$> mo) <*> Just (int32ToInt <$> ml)
 
 instance TypeEquiv ResponseValue T.ResponseValue where
     toThrift (RStringValue t)  = T.ResponseValue (Just t) Nothing  Nothing  Nothing  Nothing  Nothing
