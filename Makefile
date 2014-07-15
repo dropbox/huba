@@ -10,13 +10,13 @@ dist/build/IngestorTestClient/IngestorTestClient: thrift
 	cabal build IngestorTestClient
 test: dist/build/IngestorTestClient/IngestorTestClient
 
-Shared/Thrift/Generated/Huba_Types.hs: Shared/Thrift/Huba.thrift
-	mkdir -p Shared/Thrift/Generated
-	thrift --out Shared/Thrift/Generated --gen hs Shared/Thrift/Huba.thrift
-thrift: Shared/Thrift/Generated/Huba_Types.hs
+src/Shared/Thrift/Generated/Huba_Types.hs: src/Shared/Thrift/Huba.thrift
+	mkdir -p src/Shared/Thrift/Generated
+	thrift --out src/Shared/Thrift/Generated --gen hs src/Shared/Thrift/Huba.thrift
+thrift: src/Shared/Thrift/Generated/Huba_Types.hs
 
 clean:
-	rm -r Shared/Thrift/Generated
+	rm -r src/Shared/Thrift/Generated
 	rm -r dist
 
 .PHONY : clean
