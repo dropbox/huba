@@ -23,3 +23,6 @@ instance LeafNodeService LeafNodeHandler where
     logContents <- readMVar logs
     putStrLn $ "Current contents" ++ show logContents
     return $ LogResponse 0 "OK"
+
+  queryLeaf :: LeafNodeHandler -> Query -> IO QueryResponse
+  queryLeaf = undefined -- TODO: this
