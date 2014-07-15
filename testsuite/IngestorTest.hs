@@ -2,6 +2,7 @@
 module Main where
 
 
+import Shared.Thrift.Types
 import Shared.Thrift.Interface
 import qualified IngestorService_Client as Client
 

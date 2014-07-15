@@ -1,87 +1,13 @@
 {-# LANGUAGE OverloadedStrings, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, FlexibleInstances, ViewPatterns #-}
 module Shared.Thrift.Interface where
 
+import Shared.Thrift.Types
 import qualified Huba_Types as T
 import qualified LeafNodeService_Iface as T
 import qualified IngestorService_Iface as T
-import qualified Data.HashSet as Set
-import qualified Data.HashMap.Lazy as Map
-import qualified Data.Vector as Vector
-import Data.Text.Lazy
-import Data.Int(Int64(), Int32())
 import Control.Applicative ((<$>), (<*>))
-import Data.Ord
 import Data.Traversable (Traversable(traverse))
-
-type ColumnName = T.ColumnName
-
-data ColumnValue = StringValue Text
-                 | IntValue Int64
-                 | StringSet (Set.HashSet Text)
-                 | StringVector (Vector.Vector Text)
-  deriving (Show, Eq)
-
-data LogMessage = LogMessage { lmTimestamp :: Int64
-                             , lmTable :: Text
-                             , lmColumns :: Map.HashMap Text ColumnValue
-                             } deriving (Show, Eq)
-
-instance Ord LogMessage where
-    compare = comparing lmTimestamp `orComparing` lmTable
-        where orComparing comp f x x' = case comp x x' of
-                                              EQ -> comparing f x x'
-                                              o -> o
-
-type LogBatch = Vector.Vector LogMessage
-
-data LogResponse = LogResponse { lrCode :: Int32
-                              , lrMessage :: Text
-                              } deriving Show
-
-type AggregationFunction = T.AggregationFunction
-
-data ColumnExpression = ColumnExpression { ceColumn :: Text
-                                         , ceAggregationFunction :: AggregationFunction
-                                         } deriving (Show, Eq)
-
-type ComparisonFunction = T.ComparisonFunction
-
-data Condition = Condition { cColumn :: Text
-                           , cComparisonFunction :: ComparisonFunction
-                           , cValue :: ColumnValue
-                           }
-  deriving (Show, Eq)
-
-data Query = Query { qColumnExpressions :: (Vector.Vector ColumnExpression)
-                   , qTable :: Text
-                   , qTimeStart :: Int64
-                   , qTimeEnd :: Int64
-                   , qConditions :: Maybe (Vector.Vector Condition)
-                   , qGroupBy :: Maybe (Vector.Vector Text)
-                   , qOrderBy :: Maybe Int32
-                   , qLimit :: Maybe Int32
-                   }
-  deriving (Show,Eq)
-
-data ResponseValue = RStringValue Text
-                   | RIntValue Int64
-                   | RStringSet (Set.HashSet Text)
-                   | RStringVector (Vector.Vector Text)
-                   | RDoubleValue Double
-                   | RNull
-  deriving (Show, Eq)
-
-data Row = Row { rValues :: Vector.Vector ResponseValue }
-  deriving (Show, Eq)
-
-data QueryResponse = QueryResponse { qrCode :: Int32
-                                   , qrMessage :: Maybe Text
-                                   , qrRows :: Maybe (Vector.Vector Row)
-                                   }
-  deriving (Show, Eq)
-
-
----------------------
+import qualified Data.HashMap.Lazy as Map
 
 class TypeEquiv haskType thriftType | haskType -> thriftType, thriftType -> haskType where
     toThrift :: haskType -> thriftType

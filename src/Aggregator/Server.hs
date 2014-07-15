@@ -2,6 +2,7 @@
 
 module Aggregator.Server where
 
+import Shared.Thrift.Types
 import Shared.Thrift.Interface
 
 import Control.Applicative ((<$>))

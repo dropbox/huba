@@ -2,6 +2,7 @@
 
 module LeafNode.Datastore (LeafStore(), ingestBatch) where
 
+import Shared.Thrift.Types
 import Shared.Thrift.Interface
 import qualified Data.Vector as V
 import Data.List (insert)
