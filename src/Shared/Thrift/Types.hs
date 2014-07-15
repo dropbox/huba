@@ -12,19 +12,20 @@ import qualified Data.HashMap.Lazy as Map
 
 import Data.Ord (comparing)
 
-import Lens.Family2.TH
+import Control.Lens.TH
 
 type ColumnName = T.ColumnName
+type Timestamp = Int64
 
 data ColumnValue = StringValue Text
-                 | IntValue Int64
+                 | IntValue Timestamp
                  | StringSet (Set.HashSet Text)
                  | StringVector (Vector Text)
   deriving (Show, Eq)
 
-data LogMessage = LogMessage { _lmTimestamp :: Int64
+data LogMessage = LogMessage { _lmTimestamp :: Timestamp
                              , _lmTable :: Text
-                             , _lmColumns :: Map.HashMap Text ColumnValue
+                             , _lmColumns :: Map.HashMap ColumnName ColumnValue
                              } deriving (Show, Eq)
 
 instance Ord LogMessage where
@@ -55,8 +56,8 @@ data Condition = Condition { _cColumn :: ColumnName
 
 data Query = Query { _qColumnExpressions :: Vector ColumnExpression
                    , _qTable :: Text
-                   , _qTimeStart :: Int64
-                   , _qTimeEnd :: Int64
+                   , _qTimeStart :: Timestamp
+                   , _qTimeEnd :: Timestamp
                    , _qConditions :: Maybe (Vector Condition)
                    , _qGroupBy :: Maybe (Vector ColumnName)
                    , _qOrderBy :: Maybe Int32
