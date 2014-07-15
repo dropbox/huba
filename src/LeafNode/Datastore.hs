@@ -13,6 +13,7 @@ import Control.Lens
 import Data.Maybe (fromMaybe)
 
 import Data.Int (Int32)
+import Data.Ord (comparing)
 
 type LeafStore = [LogMessage]
 
@@ -51,9 +52,6 @@ makeCondition (Condition col comp val) msg = let compFn = case comp of T.EQ -> c
 makeConditions :: [Condition] -> (LogMessage -> Bool)
 makeConditions conditions message = all (($ message) . makeCondition) conditions
 
-getSortByFn :: Int -> (Row -> Row -> Ordering)
-getSortByFn i (Row vals1) (Row vals2) = compare (vals1 V.! i) (vals2 V.! i)
-
 processRows :: Query -> [LogMessage] -> [Row] -- TODO: let's rename Row to ResponseRow
 processRows q rows = undefined
 
@@ -64,6 +62,7 @@ query store q = QueryResponse 0 (Just "asdf") (Just $ V.fromList responseRows)
       -- Get the rows in the desired time range
       rowsInTimeRange = getMessagesInTimeRange store (q ^. qTimeStart) (q ^. qTimeEnd)
 
+      filterFn :: [LogMessage] -> [LogMessage]
       filterFn = let conditionFn = case q ^. qConditions of
                                      Nothing -> const True
                                      Just conditions -> makeConditions $ V.toList conditions in
@@ -72,15 +71,15 @@ query store q = QueryResponse 0 (Just "asdf") (Just $ V.fromList responseRows)
 
       processFn = processRows q
 
-      sortFn = case q ^. qOrderBy of
-                 Nothing -> id
-                 Just orderByIndex -> sortBy (getSortByFn orderByIndex)
+      sortWith :: Maybe Int -> [Row] -> [Row]
+      sortWith Nothing = id
+      sortWith (Just index) = sortBy (comparing ((V.! index) . view rValues))
 
-      limitFn = case q ^. qLimit of
-                  Nothing -> id
-                  Just n -> take n
+      limitBy :: Maybe Int -> [Row] -> [Row]
+      limitBy Nothing = id
+      limitBy (Just n) = take n
 
-      responseRows = (limitFn . sortFn . processFn . filterFn) rowsInTimeRange
+      responseRows = (limitBy (q ^. qLimit) . sortWith (q ^. qOrderBy) . processFn . filterFn) rowsInTimeRange
       -- TODO: make sure the sort interacts with the limit/processing efficiently here.
       -- Taking k things from a sorted list of length n shouldn't take n log n.
       -- You can do faster with a quicksort that ignores the part of the list it doesn't

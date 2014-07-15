@@ -73,7 +73,7 @@ data ResponseValue = RDoubleValue Double
                    | RNull
   deriving (Show, Eq)
 
-data Row = Row { rValues :: Vector ResponseValue }
+data Row = Row { _rValues :: Vector ResponseValue }
   deriving (Show, Eq)
 
 data QueryResponse = QueryResponse { _qrCode :: Int32
