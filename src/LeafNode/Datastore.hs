@@ -55,11 +55,10 @@ getSortByFn :: Int -> (Row -> Row -> Ordering)
 getSortByFn i (Row vals1) (Row vals2) = compare (vals1 V.! i) (vals2 V.! i)
 
 processRows :: Query -> [LogMessage] -> [Row] -- TODO: let's rename Row to ResponseRow
-processRows q rows = undefined
-
+processRows (Query columnExpressions _ _ _ _ groupBy _ _) rows = undefined
 
 query :: LeafStore -> Query -> QueryResponse
-query store q = QueryResponse 0 (Just "asdf") (Just $ V.fromList responseRows)
+query store q = QueryResponse 0 (Just "Success") (Just $ V.fromList responseRows)
     where
       -- Get the rows in the desired time range
       rowsInTimeRange = getMessagesInTimeRange store (q ^. qTimeStart) (q ^. qTimeEnd)
@@ -67,7 +66,8 @@ query store q = QueryResponse 0 (Just "asdf") (Just $ V.fromList responseRows)
       filterFn = let conditionFn = case q ^. qConditions of
                                      Nothing -> const True
                                      Just conditions -> makeConditions $ V.toList conditions in
-                 filter conditionFn
+                 -- Filter by all the conditions plus the table match
+                 filter (\x -> conditionFn x && (q ^. qTable == x ^. lmTable))
                  -- TODO: let's make conditions a [Condition] instead of a Vector Condition, yes?
 
       processFn = processRows q
