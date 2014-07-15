@@ -1,5 +1,11 @@
 {-# LANGUAGE OverloadedStrings, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, FlexibleInstances, ViewPatterns #-}
-module Shared.Thrift.Interface where
+module Shared.Thrift.Interface (
+  TypeEquiv(..),
+  IngestorService(..),
+  LeafNodeService(..),
+  T.AggregationFunction(..),
+  T.ComparisonFunction(..)
+) where
 
 import Shared.Thrift.Types
 import qualified Huba_Types as T
