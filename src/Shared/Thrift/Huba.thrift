@@ -99,7 +99,7 @@ enum AggregationFunction {
 }
 
 struct ColumnExpression {
-  1: required string column,
+  1: required ColumnName column,
   2: required AggregationFunction aggregationFunction = Aggregationfunction.CONSTANT,
 }
 
@@ -115,7 +115,7 @@ enum ComparisonFunction {
 }
 
 struct Condition {
-  1: required string column,
+  1: required ColumnName column,
   2: required ComparisonFunction comparisonFunction,
   3: required ColumnValue value,
 }
@@ -126,7 +126,7 @@ struct Query {
   3: required i64 timeStart
   4: required i64 timeEnd
   5: optional list <Condition> conditions = [],
-  6: optional list<string> groupBy = [],
+  6: optional list<ColumnName> groupBy = [],
   7: optional i32 orderBy,
   8: optional i32 limit = 1000
 }

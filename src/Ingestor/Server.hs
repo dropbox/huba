@@ -2,6 +2,7 @@
 
 module Ingestor.Server (newIngestorHandler) where
 
+import Shared.Thrift.Types
 import Shared.Thrift.Interface
 import Data.Vector (Vector())
 
