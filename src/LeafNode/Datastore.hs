@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module LeafNode.Datastore (LeafStore(), ingestBatch) where
 
 import Shared.Thrift.Interface
@@ -22,9 +24,9 @@ getMessagesInTimeRange store timeStart timeEnd = filter
 makeCondition = undefined
 
 answerQuery :: LeafStore -> Query -> QueryResponse
-answerQuery store q = QueryResponse "asdf"
-    where queriesInTimeRange = getMessagesInTimeRange store (timeStart q) (timeEnd q)
-          filteredQueries = filter (makeCondition (conditions q)) queriesInTimeRange
+answerQuery store q = QueryResponse 0 (Just "asdf") Nothing
+    where queriesInTimeRange = getMessagesInTimeRange store (qTimeStart q) (qTimeEnd q)
+          filteredQueries = filter (makeCondition (qConditions q)) queriesInTimeRange
 
 
 

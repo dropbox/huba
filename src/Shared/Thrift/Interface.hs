@@ -173,15 +173,3 @@ class IngestorService t where
 instance (IngestorService t) => T.IngestorService_Iface t where
     log h ((>>= fromThrift) -> Just message) = toThrift <$> logIngest h message
     log _ _ = return $ toThrift $ LogResponse (-1) "Invalid LogMessage!"
-
-data Query = Query {
-      table:: Text,
-      timeStart:: Int64,
-      timeEnd:: Int64,
-      conditions:: [T.Condition],
-      groupBy:: [Text],
-      orderBy:: Int32,
-      limit:: Int32
-    }
-
-data QueryResponse = QueryResponse String
