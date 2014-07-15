@@ -52,6 +52,7 @@ makeConditions :: [Condition] -> (LogMessage -> Bool)
 makeConditions conditions message = all (($ message) . makeCondition) conditions
 
 getSortByFn :: Int -> (Row -> Row -> Ordering)
+getSortByFn i (Row vals1) (Row vals2) = compare (vals1 V.! i) (vals2 V.! i)
 
 processRows :: Query -> [LogMessage] -> [Row] -- TODO: let's rename Row to ResponseRow
 processRows q rows = undefined
@@ -73,7 +74,7 @@ query store q = QueryResponse 0 (Just "asdf") (Just $ V.fromList responseRows)
 
       sortFn = case q ^. qOrderBy of
                  Nothing -> id
-                 Just orderByIndex -> sortBy (getSortByFn q orderByIndex)
+                 Just orderByIndex -> sortBy (getSortByFn orderByIndex)
 
       limitFn = case q ^. qLimit of
                   Nothing -> id

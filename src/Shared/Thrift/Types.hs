@@ -65,11 +65,11 @@ data Query = Query { _qColumnExpressions :: Vector ColumnExpression
                    }
   deriving (Show,Eq)
 
-data ResponseValue = RStringValue Text
+data ResponseValue = RDoubleValue Double
+                   | RStringValue Text
                    | RIntValue Int64
                    | RStringSet (Set.HashSet Text)
                    | RStringVector (Vector Text)
-                   | RDoubleValue Double
                    | RNull
   deriving (Show, Eq)
 

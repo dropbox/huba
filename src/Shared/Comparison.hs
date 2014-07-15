@@ -46,3 +46,24 @@ columnValueLTE _                 _                 = False
 
 columnValueREGEXPEQ :: ColumnValue -> ColumnValue -> Bool
 columnValueREGEXPEQ _            _                 = False
+
+
+instance Ord ResponseValue where
+    RDoubleValue d1 `compare` RDoubleValue d2 = d1 `compare` d2
+    RIntValue i1 `compare` RIntValue i2 = i1 `compare` i2
+    RStringValue t1 `compare` RStringValue t2 = t1 `compare` t2
+    RStringSet s1 `compare` RStringSet s2 = EQ
+    RStringVector v1 `compare` RStringVector v2 = EQ
+
+    -- Note that we need to define this for mixed types like RStringValue compared with RIntValue.
+    -- Let's just impose an absolute order on types, i.e.
+    -- RDoubleValue > RIntValue > RStringValue > RStringSet > RStringVector > RNull
+    -- How can we do this concisely? I.e. not like the following:
+
+    RDoubleValue d `compare` RStringValue t = GT
+    RDoubleValue d `compare` RIntValue i = GT
+    RDoubleValue d `compare` RStringSet s = GT
+    RDoubleValue d `compare` RStringVector v = GT
+    RDoubleValue d `compare` RNull = GT
+
+    -- TODO...
