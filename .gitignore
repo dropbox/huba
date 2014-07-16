@@ -13,3 +13,4 @@ cabal-dev
 cabal.sandbox.config
 cabal.config
 *.scpt
+.sqlhistory

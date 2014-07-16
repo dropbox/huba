@@ -5,8 +5,8 @@ module LeafNode.Server (newLeafNodeHandler) where
 import Shared.Thrift.Types
 import Shared.Thrift.Interface
 
-import Control.Applicative ((<$>))
-import LeafNode.Datastore (LeafStore, ingestBatch)
+import Control.Applicative ((<$>), (<*>))
+import LeafNode.Datastore (LeafStore, ingestBatch, query)
 
 import Control.Concurrent.MVar(MVar(), newMVar, modifyMVar_, readMVar)
 
@@ -29,4 +29,5 @@ instance LeafNodeService LeafNodeHandler where
     return $ LogResponse 0 "OK"
 
   queryLeaf :: LeafNodeHandler -> Query -> IO QueryResponse
-  queryLeaf = undefined -- TODO: this
+  queryLeaf (LeafNodeHandler logs) q = query <$> readMVar logs <*> return q
+
