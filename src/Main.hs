@@ -63,6 +63,6 @@ main = do
 
 setupLogging :: IO ()
 setupLogging = do
-  let format = simpleLogFormatter "[$loggername] $tid: $msg"
+  let format = simpleLogFormatter "[$loggername] $pid | $tid: $msg"
   handler <- (`setFormatter` format) <$> streamHandler stderr DEBUG
   updateGlobalLogger rootLoggerName (setHandlers [handler] . setLevel DEBUG)
