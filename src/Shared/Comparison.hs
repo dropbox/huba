@@ -1,6 +1,31 @@
 module Shared.Comparison where
 
-import Shared.Thrift.Types
+import Shared.Thrift.Types as T
+import Control.Lens.TH
+import Control.Lens
+
+import Data.Maybe (fromMaybe)
+
+{-
+  Given a Condition, generate a predicate on LogMessages to decide
+  whether the LogMessage matches the condition
+ -}
+makeCondition :: Condition -> (LogMessage -> Bool)
+makeCondition (Condition col comp val) msg = let compFn = case comp of T.EQ -> columnValueEQ
+                                                                       T.NEQ -> columnValueNEQ
+
+                                                                       T.GT -> columnValueGT
+                                                                       T.LT -> columnValueLT
+                                                                       T.GTE -> columnValueGTE
+                                                                       T.LTE -> columnValueLTE
+
+                                                                       T.REGEXP_EQ -> columnValueREGEXPEQ in
+  fromMaybe False $ do
+    colValue <- getColFromMessage col msg
+    return (colValue `compFn` val)
+
+getColFromMessage :: ColumnName -> LogMessage -> Maybe ColumnValue
+getColFromMessage name msg = msg ^. lmColumns . at name
 
 columnValueEQ :: ColumnValue -> ColumnValue -> Bool
 columnValueEQ (StringValue v1)  (StringValue v2)  = v1 == v2
