@@ -9,7 +9,7 @@ import Shared.Query (orderRows)
 import LeafNode.Aggregations
 
 import qualified Data.Vector as V
-import Data.List (insert, sortBy)
+import Data.List (insert, sortBy, groupBy)
 
 import Control.Monad (liftM)
 import Control.Lens
@@ -19,7 +19,11 @@ import Data.Maybe (fromMaybe, isNothing, fromJust)
 import Data.Int (Int32)
 import Data.Ord (comparing)
 
+import Data.Function (on)
+
 import qualified Data.HashMap.Strict as H
+
+import qualified Data.Map.Lazy as L
 
 type LeafStore = [LogMessage]
 
@@ -101,5 +105,12 @@ processSingleGroupBy (Query columnExpressions _ _ _ _ groupBy _ _) rows =
 
         aggFn = V.zipWith3 ($) aggFns :: V.Vector ResponseValue -> V.Vector (Maybe ColumnValue) -> V.Vector ResponseValue
 
-groupLogMessages :: V.Vector ColumnName -> [LogMessage] -> [[LogMessage]]
-groupLogMessages = undefined
+{-
+  Given a groupBy and a list of log messages, create a list of lists of log messages
+  that have been partitioned by the groupBy. TODO: make sure this is efficient. It's
+  probably not, but maybe the lazy map and lazy list will play together well.
+ -}
+groupLogMessages :: GroupBy -> [LogMessage] -> [[LogMessage]]
+groupLogMessages columns msgs = L.elems $ partition project msgs where
+    partition f xs = L.fromListWith (++) [(f x, [x]) | x <- xs]
+    project = extractColumnValues columns
