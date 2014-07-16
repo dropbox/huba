@@ -5,6 +5,7 @@ module LeafNode.Datastore (LeafStore(), ingestBatch, query) where
 import Shared.Thrift.Types as T
 import Shared.Thrift.Interface
 import Shared.Comparison
+import Shared.Query (orderRows)
 
 import qualified Data.Vector as V
 import Data.List (insert, sortBy)
@@ -18,6 +19,8 @@ import Data.Ord (comparing)
 import Data.Maybe
 
 import qualified Data.HashMap.Strict as H
+
+
 
 type LeafStore = [LogMessage]
 
@@ -104,22 +107,13 @@ query store q = QueryResponse 0 Nothing (Just $ V.fromList responseRows)
 
       processFn = processRows q
 
-      sortWith :: Maybe Int -> [Row] -> [Row]
-      sortWith Nothing = id
-      sortWith (Just index) = sortBy (comparing ((V.! index) . view rValues))
-
-      limitBy :: Maybe Int -> [Row] -> [Row]
-      limitBy Nothing = id
-      limitBy (Just n) = take n
-
-      responseRows = (limitBy (q ^. qLimit) . sortWith (q ^. qOrderBy) . processFn . filterFn) rowsInTimeRange
+      responseRows = (take (q ^. qLimit) . orderRows q . processFn . filterFn) rowsInTimeRange
       -- TODO: make sure the sort interacts with the limit/processing efficiently here.
       -- Taking k things from a sorted list of length n shouldn't take n log n.
       -- You can do faster with a quicksort that ignores the part of the list it doesn't
       -- need to sort.
       -- Alternatively you can do n log k by continually doing sorted insert (and delete)
       -- into a binary tree of size k
-
 
 
 

@@ -7,6 +7,10 @@ import Shared.Thrift.Types
 import qualified Huba_Types as T
 import qualified LeafNodeService_Iface as T
 import qualified IngestorService_Iface as T
+import qualified AggregatorService_Iface as T
+import qualified InternalAggregatorService_Iface as T
+
+import Data.Vector (Vector())
 import Control.Applicative ((<$>), (<*>))
 import Data.Traversable (Traversable(traverse))
 import qualified Data.HashMap.Lazy as Map
@@ -54,8 +58,8 @@ int32ToInt :: Int32 -> Int
 int32ToInt = fromInteger . toInteger
 
 instance TypeEquiv Query T.Query where
-    toThrift (Query ce t ts te mc mg mo ml) = T.Query (Just $ toThrift ce) (Just t) (Just ts) (Just te) (toThrift <$> mc) mg (intToInt32 <$> mo) (intToInt32 <$> ml)
-    fromThrift (T.Query mce mt mts mte mc mg mo ml) = Query <$> (mce >>= fromThrift) <*> mt <*> mts <*> mte <*> (fromThrift <$> mc) <*> Just mg <*> Just (int32ToInt <$> mo) <*> Just (int32ToInt <$> ml)
+    toThrift (Query ce t ts te mc mg mo l) = T.Query (Just $ toThrift ce) (Just t) (Just ts) (Just te) (toThrift <$> mc) mg (intToInt32 <$> mo) (Just $ intToInt32 l)
+    fromThrift (T.Query mce mt mts mte mc mg mo ml) = Query <$> (mce >>= fromThrift) <*> mt <*> mts <*> mte <*> (fromThrift <$> mc) <*> Just mg <*> Just (int32ToInt <$> mo) <*> (int32ToInt <$> ml)
 
 instance TypeEquiv ResponseValue T.ResponseValue where
     toThrift (RStringValue t)  = T.ResponseValue (Just t) Nothing  Nothing  Nothing  Nothing  Nothing
@@ -108,3 +112,17 @@ class IngestorService t where
 instance (IngestorService t) => T.IngestorService_Iface t where
     log h ((>>= fromThrift) -> Just message) = toThrift <$> logIngest h message
     log _ _ = return $ toThrift $ LogResponse (-1) "Invalid LogMessage!"
+
+class AggregatorService t where
+    queryAggregator :: t -> Query -> IO QueryResponse
+
+instance (AggregatorService t) => T.AggregatorService_Iface t where
+    query h ((>>= fromThrift) -> Just q) = toThrift <$> queryAggregator h q
+    query _ _ = return $ toThrift $ QueryResponse (-1) (Just "Invalid Query!") Nothing
+
+class InternalAggregatorService t where
+    queryInternalAggregator :: t -> Query -> Vector ServerID -> IO QueryResponse
+
+instance (InternalAggregatorService t) => T.InternalAggregatorService_Iface t where
+    queryInternal h ((>>= fromThrift) -> Just q) (Just ids) = toThrift <$> queryInternalAggregator h q ids
+    queryInternal _ _ _ = return $ toThrift $ QueryResponse (-1) (Just "Invalid Query!") Nothing
