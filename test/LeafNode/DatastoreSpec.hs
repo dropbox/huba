@@ -2,13 +2,14 @@
 
 module LeafNode.DatastoreSpec (main, spec) where
 
+import LeafNode.Datastore
+
 import Test.Hspec
 -- import Test.QuickCheck
 
 import Shared.Thrift.Types as T
 import Shared.Thrift.Interface
 
-import LeafNode.Datastore
 
 
 
@@ -37,19 +38,29 @@ spec = do
   describe "Simple projection queries" $
     it "should project out columns" $
        testQueryResponse allMessagesStore
-                         (Query [ColumnExpression "int1" CONSTANT, ColumnExpression "string1" CONSTANT] "some-table" 0 100 Nothing Nothing Nothing Nothing)
+                         (Query [ColumnExpression "int1" CONSTANT, ColumnExpression "string1" CONSTANT] "some-table" 0 100 Nothing Nothing Nothing 100)
                          (successfulQueryResponse [Row [RIntValue 42, RStringValue "s1"],
                                                   Row [RIntValue 100, RStringValue "s2"],
                                                   Row [RIntValue 0, RStringValue "s3"]])
 
+  describe "Aggregations" $
+    it "can do a count aggregation" $
+       testQueryResponse allMessagesStore
+                         (Query [ColumnExpression "int1" COUNT, ColumnExpression "string1" CONSTANT] "some-table" 0 100 Nothing Nothing Nothing 100)
+                         (successfulQueryResponse [Row [RIntValue 142, RStringValue "s1"]])
+
+
+-- Helper functions --
 
 testQueryResponse :: LeafStore -> Query -> QueryResponse -> Expectation
 testQueryResponse messageStore q queryResponse = query messageStore q `shouldBe` queryResponse
 
 basicTimeRangeQuery :: Timestamp -> Timestamp -> Query
-basicTimeRangeQuery t1 t2 = Query [ColumnExpression "string1" CONSTANT] "some-table" t1 t2 Nothing Nothing Nothing Nothing
+basicTimeRangeQuery t1 t2 = Query [ColumnExpression "string1" CONSTANT] "some-table" t1 t2 Nothing Nothing Nothing 100
 
 successfulQueryResponse rows = QueryResponse 0 Nothing (Just rows)
+
+-- Data --
 
 lm1 = LogMessage 10 "some-table" [("string1", StringValue "s1"), ("int1", IntValue 42), ("vector1", StringVector ["a", "b", "c"])]
 lm2 = LogMessage 20 "some-table" [("string1", StringValue "s2"), ("int1", IntValue 100), ("vector2", StringVector ["b", "c"])]
