@@ -15,6 +15,7 @@ import Data.Ord (comparing)
 import Control.Lens.TH
 
 type ColumnName = T.ColumnName
+type ServerID = T.ServerID
 type Timestamp = Int64
 
 data ColumnValue = StringValue Text
@@ -61,7 +62,7 @@ data Query = Query { _qColumnExpressions :: Vector ColumnExpression
                    , _qConditions :: Maybe (Vector Condition)
                    , _qGroupBy :: Maybe (Vector ColumnName)
                    , _qOrderBy :: Maybe Int
-                   , _qLimit :: Maybe Int
+                   , _qLimit :: Int
                    }
   deriving (Show,Eq)
 

@@ -44,22 +44,22 @@ write_Log_args oprot record = do
   writeStructBegin oprot "Log_args"
   case f_Log_args_logBatch record of {Nothing -> return (); Just _v -> do
     writeFieldBegin oprot ("logBatch",T_LIST,1)
-    (let f = Vector.mapM_ (\_viter139 -> write_LogMessage oprot _viter139) in do {writeListBegin oprot (T_STRUCT,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
+    (let f = Vector.mapM_ (\_viter155 -> write_LogMessage oprot _viter155) in do {writeListBegin oprot (T_STRUCT,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
     writeFieldEnd oprot}
   writeFieldStop oprot
   writeStructEnd oprot
 read_Log_args_fields iprot record = do
-  (_,_t141,_id142) <- readFieldBegin iprot
-  if _t141 == T_STOP then return record else
-    case _id142 of 
-      1 -> if _t141 == T_LIST then do
-        s <- (let f n = Vector.replicateM (fromIntegral n) ((read_LogMessage iprot)) in do {(_etype146,_size143) <- readListBegin iprot; f _size143})
+  (_,_t157,_id158) <- readFieldBegin iprot
+  if _t157 == T_STOP then return record else
+    case _id158 of 
+      1 -> if _t157 == T_LIST then do
+        s <- (let f n = Vector.replicateM (fromIntegral n) ((read_LogMessage iprot)) in do {(_etype162,_size159) <- readListBegin iprot; f _size159})
         read_Log_args_fields iprot record{f_Log_args_logBatch=Just s}
         else do
-          skip iprot _t141
+          skip iprot _t157
           read_Log_args_fields iprot record
       _ -> do
-        skip iprot _t141
+        skip iprot _t157
         readFieldEnd iprot
         read_Log_args_fields iprot record
 read_Log_args iprot = do
@@ -79,17 +79,17 @@ write_Log_result oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_Log_result_fields iprot record = do
-  (_,_t151,_id152) <- readFieldBegin iprot
-  if _t151 == T_STOP then return record else
-    case _id152 of 
-      0 -> if _t151 == T_STRUCT then do
+  (_,_t167,_id168) <- readFieldBegin iprot
+  if _t167 == T_STOP then return record else
+    case _id168 of 
+      0 -> if _t167 == T_STRUCT then do
         s <- (read_LogResponse iprot)
         read_Log_result_fields iprot record{f_Log_result_success=Just s}
         else do
-          skip iprot _t151
+          skip iprot _t167
           read_Log_result_fields iprot record
       _ -> do
-        skip iprot _t151
+        skip iprot _t167
         readFieldEnd iprot
         read_Log_result_fields iprot record
 read_Log_result iprot = do
@@ -109,17 +109,17 @@ write_Query_args oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_Query_args_fields iprot record = do
-  (_,_t156,_id157) <- readFieldBegin iprot
-  if _t156 == T_STOP then return record else
-    case _id157 of 
-      1 -> if _t156 == T_STRUCT then do
+  (_,_t172,_id173) <- readFieldBegin iprot
+  if _t172 == T_STOP then return record else
+    case _id173 of 
+      1 -> if _t172 == T_STRUCT then do
         s <- (read_Query iprot)
         read_Query_args_fields iprot record{f_Query_args_query=Just s}
         else do
-          skip iprot _t156
+          skip iprot _t172
           read_Query_args_fields iprot record
       _ -> do
-        skip iprot _t156
+        skip iprot _t172
         readFieldEnd iprot
         read_Query_args_fields iprot record
 read_Query_args iprot = do
@@ -139,17 +139,17 @@ write_Query_result oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_Query_result_fields iprot record = do
-  (_,_t161,_id162) <- readFieldBegin iprot
-  if _t161 == T_STOP then return record else
-    case _id162 of 
-      0 -> if _t161 == T_STRUCT then do
+  (_,_t177,_id178) <- readFieldBegin iprot
+  if _t177 == T_STOP then return record else
+    case _id178 of 
+      0 -> if _t177 == T_STRUCT then do
         s <- (read_QueryResponse iprot)
         read_Query_result_fields iprot record{f_Query_result_success=Just s}
         else do
-          skip iprot _t161
+          skip iprot _t177
           read_Query_result_fields iprot record
       _ -> do
-        skip iprot _t161
+        skip iprot _t177
         readFieldEnd iprot
         read_Query_result_fields iprot record
 read_Query_result iprot = do

@@ -53,6 +53,7 @@ namespace hs HubaThrift
  * C style here.
  */
 typedef string ColumnName
+typedef i32 ServerID
 
 /*** Logging data structures ***/
 
@@ -156,22 +157,18 @@ struct QueryResponse {
  */
 
 service IngestorService {
-
   LogResponse log(1:list<LogMessage> logBatch),
-
-
 }
 
 service AggregatorService {
-
   QueryResponse query(1:Query query)
+}
 
+service InternalAggregatorService {
+  QueryResponse queryInternal(1:Query query, 2:list<ServerID> serverIDs)
 }
 
 service LeafNodeService {
-
   LogResponse log(1:required list<LogMessage> logBatch),
-
   QueryResponse query(1:Query query)
-
 }

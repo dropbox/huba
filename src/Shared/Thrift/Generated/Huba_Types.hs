@@ -79,6 +79,8 @@ instance Hashable ComparisonFunction where
   hashWithSalt salt = hashWithSalt salt . fromEnum
 type ColumnName = Text
 
+type ServerID = Int32
+
 data ColumnValue = ColumnValue{f_ColumnValue_stringValue :: Maybe Text,f_ColumnValue_intValue :: Maybe Int64,f_ColumnValue_stringSet :: Maybe (Set.HashSet Text),f_ColumnValue_stringVector :: Maybe (Vector.Vector Text)} deriving (Show,Eq,Typeable)
 instance Hashable ColumnValue where
   hashWithSalt salt record = salt   `hashWithSalt` f_ColumnValue_stringValue record   `hashWithSalt` f_ColumnValue_intValue record   `hashWithSalt` f_ColumnValue_stringSet record   `hashWithSalt` f_ColumnValue_stringVector record  
