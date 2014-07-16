@@ -19,5 +19,5 @@ getLeafNodes = readServerConfig "config/LeafNode.conf"
 
 readServerConfig :: FilePath -> IO ServerList
 readServerConfig file = map readLine . map words . lines <$> readFile file
-  where readLine [name, port] = Server (read name) (fromInteger $ read port)
+  where readLine [name, port] = Server name (fromInteger $ read port)
         readLine _            = error $ "Config file " ++ file ++ " is invalid!"

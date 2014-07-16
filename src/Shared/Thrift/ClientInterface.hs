@@ -24,6 +24,7 @@ import Data.Vector (Vector())
 import Control.Applicative ((<$>))
 
 data Server = Server HostName PortNumber
+  deriving (Eq, Show)
 
 type GhcTransport = GHC.IO.Handle.Types.Handle
 
