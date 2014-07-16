@@ -67,3 +67,10 @@ instance Ord ResponseValue where
     RDoubleValue _ `compare` RNull = Prelude.GT
 
     -- TODO...
+
+
+columnValueToResponseValue :: ColumnValue -> ResponseValue
+columnValueToResponseValue (StringValue s) = RStringValue s
+columnValueToResponseValue (IntValue i) = RIntValue i
+columnValueToResponseValue (StringSet s) = RStringSet s
+columnValueToResponseValue (StringVector s) = RStringVector s

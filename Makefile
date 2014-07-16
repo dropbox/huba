@@ -17,6 +17,9 @@ thrift: src/Shared/Thrift/Generated/Huba_Types.hs
 
 clean:
 	rm -r src/Shared/Thrift/Generated
-	rm -r dist
+	cabal clean
 
-.PHONY : clean
+test: all
+	cabal test
+
+.PHONY : clean, test
