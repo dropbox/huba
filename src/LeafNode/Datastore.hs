@@ -6,20 +6,20 @@ import Shared.Thrift.Types as T
 import Shared.Thrift.Interface
 import Shared.Comparison
 import Shared.Query (orderRows)
+import LeafNode.Aggregations
 
 import qualified Data.Vector as V
 import Data.List (insert, sortBy)
 
+import Control.Monad (liftM)
 import Control.Lens
 import Control.Lens.TH
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
 
 import Data.Int (Int32)
 import Data.Ord (comparing)
-import Data.Maybe
 
 import qualified Data.HashMap.Strict as H
-
 
 
 type LeafStore = [LogMessage]
@@ -54,42 +54,40 @@ makeCondition (Condition col comp val) msg = let compFn = case comp of T.EQ -> c
     return (colValue `compFn` val)
 
 
-
-
 makeConditions :: [Condition] -> (LogMessage -> Bool)
 makeConditions conditions message = all (($ message) . makeCondition) conditions
 
--- selectAggregator
--- aggAggregator
 
--- data Aggregator = Aggregator (State a)
+extractColumnValues :: V.Vector ColumnName -> LogMessage -> V.Vector (Maybe ColumnValue)
+extractColumnValues cols (LogMessage _ _ columns) = fmap (`H.lookup` columns) cols
 
--- aggregator :: LogMessage -> a -> [Row]
-
-
-extractColumns :: V.Vector ColumnName -> LogMessage -> Row
-extractColumns cols (LogMessage _ _ columns) = Row (fmap getColumnValue cols) where
-    getColumnValue :: ColumnName -> ResponseValue
-    getColumnValue col = fromMaybe RNull $ do
-                           columnValue <- H.lookup col columns
-                           return (columnValueToResponseValue columnValue)
+extractColumnsAsRow :: V.Vector ColumnName -> LogMessage -> Row
+extractColumnsAsRow cols msg = Row $ fmap (fromMaybe RNull . liftM columnValueToResponseValue)
+                                          (extractColumnValues cols msg)
 
 isSimpleQuery :: Query -> Bool
 isSimpleQuery (Query columnExpressions _ _ _ _ groupBy _ _) = isNothing groupBy &&
                                                               V.all (== CONSTANT)  (fmap (^. ceAggregationFunction) columnExpressions)
 
-processRows :: Query -> [LogMessage] -> [Row] -- TODO: let's rename Row to ResponseRow
-processRows q@(Query columnExpressions _ _ _ _ groupBy _ _) rows =
-    if isSimpleQuery q then let columnNames = fmap (^. ceColumn) columnExpressions in
-                            map (extractColumns columnNames) rows
-    else []
+processMessages :: Query -> [LogMessage] -> [Row] -- TODO: let's rename Row to ResponseRow
+processMessages q@(Query columnExpressions _ _ _ _ groupBy _ _) rows =
+    if isSimpleQuery q then
+        map (extractColumnsAsRow columnNames) rows
+    else
+        [Row $ foldl aggFn initialValues (map projectionFn rows)] where
+        columnNames = fmap (^. ceColumn) columnExpressions
+        aggregationFunctions = fmap (^. ceAggregationFunction) columnExpressions
 
-    -- do
-    --   return ()
+        projectionFn = extractColumnValues columnNames
 
-    -- where groups = H.empty :: HashMap [ColumnName] Aggregator
-    -- For each row, select the right aggregator (based on the groupBy) and run it on the row
-    -- The aggregator emits a new state
+        aggFunctionsAndInitialValues = V.map aggFunctionAndInitialValue aggregationFunctions
+
+        aggFns = V.map fst aggFunctionsAndInitialValues :: V.Vector FoldFunction
+        initialValues = V.map snd aggFunctionsAndInitialValues :: V.Vector ResponseValue
+
+        aggFn = V.zipWith3 ($) aggFns :: V.Vector ResponseValue -> V.Vector (Maybe ColumnValue) -> V.Vector ResponseValue
+
+
 
 query :: LeafStore -> Query -> QueryResponse
 query store q = QueryResponse 0 Nothing (Just $ V.fromList responseRows)
@@ -103,9 +101,9 @@ query store q = QueryResponse 0 Nothing (Just $ V.fromList responseRows)
                                      Just conditions -> makeConditions $ V.toList conditions in
                  -- Filter by all the conditions plus the table match
                  filter (\x -> conditionFn x && (q ^. qTable == x ^. lmTable))
-                 -- TODO: let's make conditions a [Condition] instead of a Vector Condition, yes?
+                 -- TODO: let's make conditions a [Condition] instead of a Vector Condition (?)
 
-      processFn = processRows q
+      processFn = processMessages q
 
       responseRows = (take (q ^. qLimit) . orderRows q . processFn . filterFn) rowsInTimeRange
       -- TODO: make sure the sort interacts with the limit/processing efficiently here.
