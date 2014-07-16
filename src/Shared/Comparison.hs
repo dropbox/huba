@@ -94,6 +94,28 @@ instance Ord ResponseValue where
     -- TODO...
 
 
+instance Ord ColumnValue where
+    IntValue i1    `compare` IntValue i2    = i1 `compare` i2
+    StringValue t1 `compare` StringValue t2 = t1 `compare` t2
+    StringSet _    `compare` StringSet _    = Prelude.EQ
+    StringVector _ `compare` StringVector _ = Prelude.EQ
+
+    -- Note that we need to define this for mixed types like StringValue compared with IntValue.
+    -- Let's just impose an absolute order on types, i.e.
+    -- IntValue > StringValue > StringSet > StringVector
+    -- How can we do this concisely? I.e. not like the following:
+
+    IntValue _ `compare` StringValue _ = Prelude.GT
+    IntValue _ `compare` StringSet _ = Prelude.GT
+    IntValue _ `compare` StringVector _ = Prelude.GT
+
+    StringValue _ `compare` StringSet _ = Prelude.GT
+    StringValue _ `compare` StringVector _ = Prelude.GT
+
+    StringSet _ `compare` StringVector _ = Prelude.GT
+
+
+
 columnValueToResponseValue :: ColumnValue -> ResponseValue
 columnValueToResponseValue (StringValue s) = RStringValue s
 columnValueToResponseValue (IntValue i) = RIntValue i
