@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, FlexibleInstances, ViewPatterns #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Shared.Thrift.Interface where
 
 import Shared.Thrift.Types

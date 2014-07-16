@@ -10,10 +10,14 @@ import qualified Data.Vector as V
 import Data.List (insert, sortBy)
 
 import Control.Lens
+import Control.Lens.TH
 import Data.Maybe (fromMaybe)
 
 import Data.Int (Int32)
 import Data.Ord (comparing)
+import Data.Maybe
+
+import qualified Data.HashMap.Strict as H
 
 type LeafStore = [LogMessage]
 
@@ -52,11 +56,40 @@ makeCondition (Condition col comp val) msg = let compFn = case comp of T.EQ -> c
 makeConditions :: [Condition] -> (LogMessage -> Bool)
 makeConditions conditions message = all (($ message) . makeCondition) conditions
 
+-- selectAggregator
+-- aggAggregator
+
+-- data Aggregator = Aggregator (State a)
+
+-- aggregator :: LogMessage -> a -> [Row]
+
+
+extractColumns :: V.Vector ColumnName -> LogMessage -> Row
+extractColumns cols (LogMessage _ _ columns) = Row (fmap getColumnValue cols) where
+    getColumnValue :: ColumnName -> ResponseValue
+    getColumnValue col = fromMaybe RNull $ do
+                           columnValue <- H.lookup col columns
+                           return (columnValueToResponseValue columnValue)
+
+isSimpleQuery :: Query -> Bool
+isSimpleQuery (Query columnExpressions _ _ _ _ groupBy _ _) = isNothing groupBy &&
+                                                              V.all (== CONSTANT)  (fmap (^. ceAggregationFunction) columnExpressions)
+
 processRows :: Query -> [LogMessage] -> [Row] -- TODO: let's rename Row to ResponseRow
-processRows (Query columnExpressions _ _ _ _ groupBy _ _) rows = undefined
+processRows q@(Query columnExpressions _ _ _ _ groupBy _ _) rows =
+    if isSimpleQuery q then let columnNames = fmap (^. ceColumn) columnExpressions in
+                            map (extractColumns columnNames) rows
+    else []
+
+    -- do
+    --   return ()
+
+    -- where groups = H.empty :: HashMap [ColumnName] Aggregator
+    -- For each row, select the right aggregator (based on the groupBy) and run it on the row
+    -- The aggregator emits a new state
 
 query :: LeafStore -> Query -> QueryResponse
-query store q = QueryResponse 0 (Just "Success") (Just $ V.fromList responseRows)
+query store q = QueryResponse 0 Nothing (Just $ V.fromList responseRows)
     where
       -- Get the rows in the desired time range
       rowsInTimeRange = getMessagesInTimeRange store (q ^. qTimeStart) (q ^. qTimeEnd)
