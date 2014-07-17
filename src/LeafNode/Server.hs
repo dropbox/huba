@@ -28,8 +28,7 @@ instance LeafNodeService LeafNodeHandler where
 
     logContents <- readMVar logs
     debugM "LeafNode" $ "Current state:" ++ show logContents
-    return $ LogResponse 0 "OK"
+    return $ LogResponse 0 Nothing
 
   queryLeaf :: LeafNodeHandler -> Query -> IO QueryResponse
   queryLeaf (LeafNodeHandler logs) q = query <$> readMVar logs <*> return q
-

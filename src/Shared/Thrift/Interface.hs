@@ -40,9 +40,12 @@ instance TypeEquiv LogMessage T.LogMessage where
     fromThrift (T.LogMessage mTime mTable mCols) = LogMessage <$> mTime <*> mTable <*> (mCols >>= Map.traverseWithKey (const fromThrift))
 
 instance TypeEquiv LogResponse T.LogResponse where
-    toThrift (LogResponse c m) = T.LogResponse (Just c) (Just m)
-    fromThrift (T.LogResponse mc mm) = LogResponse <$> mc <*> mm
+    toThrift (LogResponse c m) = T.LogResponse (Just c) m
+    fromThrift (T.LogResponse mc mm) = LogResponse <$> mc <*> return mm
 
+instance TypeEquiv PingResponse T.PingResponse where
+    toThrift (PingResponse c m) = T.PingResponse (Just c) m
+    fromThrift (T.PingResponse mc mm) = PingResponse <$> mc <*> return mm
 
 instance TypeEquiv ColumnExpression T.ColumnExpression where
     toThrift (ColumnExpression c af) = T.ColumnExpression (Just c) (Just af)
@@ -109,7 +112,7 @@ class LeafNodeService t where
 
 instance (LeafNodeService t, CommonService t) => T.LeafNodeService_Iface t where
     log h ((>>= fromThrift) -> Just message) = toThrift <$> logLeaf h message
-    log _ _ = return $ toThrift $ LogResponse (-1) "Invalid LogMessage!"
+    log _ _ = return $ toThrift $ LogResponse (-1) (Just "Invalid LogMessage!")
 
     query h ((>>= fromThrift) -> Just q) = toThrift <$> queryLeaf h q
     query _ _ = return $ toThrift $ QueryResponse (-1) (Just "Invalid Query!") Nothing
@@ -121,7 +124,7 @@ class IngestorService t where
 
 instance (IngestorService t, CommonService t) => T.IngestorService_Iface t where
     log h ((>>= fromThrift) -> Just message) = toThrift <$> logIngest h message
-    log _ _ = return $ toThrift $ LogResponse (-1) "Invalid LogMessage!"
+    log _ _ = return $ toThrift $ LogResponse (-1) (Just "Invalid LogMessage!")
 
 -------------------------------
 

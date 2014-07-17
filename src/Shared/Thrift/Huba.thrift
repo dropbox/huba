@@ -72,7 +72,7 @@ struct LogMessage {
 
 struct LogResponse {
   1: required i32 code,
-  2: required string message,
+  2: optional string message,
 }
 
 exception InvalidLogMessageException {
