@@ -22,4 +22,7 @@ clean:
 test: all
 	cabal test
 
-.PHONY : clean, test
+it: all
+	cabal test integration-tests --show-details=streaming
+
+.PHONY : clean, test, it

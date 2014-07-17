@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings, OverloadedLists #-}
 module Main where
 
+import qualified Huba_Types as T
 
 import Shared.Thrift.Types
 import Shared.Thrift.Interface
@@ -10,25 +11,17 @@ import Thrift
 import Thrift.Protocol.Binary
 import Thrift.Transport.Handle
 
-import System.Environment (getArgs)
-
 import Network
-
-import qualified Huba_Types as T
-
-import qualified Data.Sequence as S
-import qualified Data.Text.Lazy as L
-
-import qualified Data.Random as R
-import qualified Data.Random.Extras as RE
-import qualified Data.HashMap.Lazy as Map
-import qualified Data.Random.Source.DevRandom as R
-
+import System.Environment (getArgs)
 import Data.Foldable (toList)
-
 import Control.Monad (replicateM_, replicateM)
 
 import Data.Vector as V (fromList)
+
+import qualified Data.Random.Source.DevRandom as R
+import qualified Data.Random as R
+
+import Testing.Util (genRandomLogMessage)
 
 main :: IO ()
 main = do
@@ -49,19 +42,3 @@ main = do
   --       (\e -> printf "InvalidOperation %s\n" (show (e :: InvalidLogMessageException)))
 
   tClose transport
-
-
-tableChoices = ["tableA", "tableB", "tableC"]
-
-genRandomLogMessage = do
-  ts <- R.uniform 0 100000
-  table <- RE.choice tableChoices
-
-  string1 <- RE.sample 10 ['a'..'z']
-  int1 <- R.uniform 0 100
-
-  -- numStringsInVector <- R.uniform 0 10
-  -- TODO: make a vector with numStringsInVector random strings and add it to the message with some probability
-  -- TODO: make there be a chance of adding a random set of strings
-  return $ LogMessage ts table $ Map.fromList [("string1", StringValue $ L.pack string1),
-                                               ("int1", IntValue int1)]
