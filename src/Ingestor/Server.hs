@@ -25,6 +25,7 @@ instance CommonService IngestorHandler
 instance IngestorService IngestorHandler where
   logIngest :: IngestorHandler -> LogBatch -> IO LogResponse
   logIngest (IngestorHandler leaves) messages = do
+    noticeM "Ingestor" "Going to try picking leaves"
     leaf <- pick leaves
 
     infoM "Ingestor" $ "Received log batch. Sending to " ++ show leaf
