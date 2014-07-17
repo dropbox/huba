@@ -1,20 +1,12 @@
 -- module Spec (tests) where
 module Main where
 
-import qualified Huba_Types as T
-
 import Distribution.TestSuite
 import Launch (runServer)
 import Testing.Util (genRandomLogMessage, waitForServer)
 
 import Shared.Thrift.Interface
-import Shared.Thrift.ClientInterface (Server(..))
-
-import Thrift
-import Thrift.Protocol.Binary
-import Thrift.Transport.Handle
-
-import qualified IngestorService_Client as IngestorClient
+import Shared.Thrift.ClientInterface (sendIngestorLog, Server(..))
 
 import Control.Concurrent.Async (async, waitAny, mapConcurrently)
 import Control.Applicative ( (<$>) )
@@ -54,16 +46,14 @@ tests = do
 
 
   -- Send a bunch of random LogMessages into the system
-  transport <- hOpen ("localhost" :: String, PortNumber 8000)
-  let binProto = BinaryProtocol transport
-      protocols = (binProto, binProto)
+  let server = Server "localhost" 8000
       numBatches = 10
       batchSize = 10
 
   replicateM_ numBatches $ do
          -- Get batchSize random messages
          msgs <- replicateM batchSize $ R.runRVar genRandomLogMessage R.DevURandom
-         resp <- IngestorClient.log protocols $ V.fromList $ map toThrift (toList msgs)
+         resp <- sendIngestorLog server $ V.fromList msgs
          putStrLn $ "Got response: " ++ show resp
 
   -- Uncommenting this line lets us wait on all the processes
