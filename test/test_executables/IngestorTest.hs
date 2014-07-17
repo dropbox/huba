@@ -30,7 +30,7 @@ main = do
 
   transport  <- hOpen ("localhost" :: String, PortNumber 8000)
   let binProto = BinaryProtocol transport
-  let protocols = (binProto, binProto)
+      protocols = (binProto, binProto)
 
   replicateM_ numBatches $ do
          -- Get batchSize random messages

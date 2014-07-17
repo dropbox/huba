@@ -4,7 +4,8 @@ module Shared.Thrift.ClientInterface (
   sendLeafQuery,
   sendIngestorLog,
   sendInternalAggregatorQuery,
-  sendRootQuery
+  sendRootQuery,
+  sendPing
 ) where
 
 import Shared.Thrift.Types
@@ -16,6 +17,7 @@ import Thrift.Transport.Handle
 import Network
 import GHC.IO.Handle.Types (Handle())
 
+import qualified CommonService_Client as CommonClient
 import qualified LeafNodeService_Client as LeafNodeClient
 import qualified IngestorService_Client as IngestorClient
 import qualified AggregatorService_Client as AggregatorClient
@@ -25,6 +27,7 @@ import qualified InternalAggregatorService_Client as InternalAggregatorClient
 import Data.Vector (Vector())
 import Control.Applicative ((<$>))
 
+-- TODO: let's use Network.Connection.ConnectionParams instead
 data Server = Server HostName PortNumber
   deriving (Eq, Show)
 
@@ -74,5 +77,10 @@ sendIngestorLog server message = fromThrift <$> send protocol server (`IngestorC
 sendInternalAggregatorQuery :: Server -> Query -> Vector ServerID -> IO (Maybe QueryResponse)
 sendInternalAggregatorQuery server query serverIDs = fromThrift <$> send protocol server (\p -> InternalAggregatorClient.queryInternal p (toThrift query) serverIDs)
 
+
 sendRootQuery :: Server -> Query -> IO (Maybe QueryResponse)
 sendRootQuery server query = fromThrift <$> send protocol server (`AggregatorClient.query` toThrift query)
+
+
+sendPing :: Server -> IO (Maybe PingResponse)
+sendPing server = fromThrift <$> send protocol server CommonClient.ping

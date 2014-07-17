@@ -39,8 +39,12 @@ instance Ord LogMessage where
 type LogBatch = Vector LogMessage
 
 data LogResponse = LogResponse { _lrCode :: Int32
-                               , _lrMessage :: Text
+                               , _lrMessage :: Maybe Text
                                } deriving Show
+
+data PingResponse = PingResponse { _prCode :: Int32
+                                 , _prMessage :: Maybe Text
+                                 } deriving Show
 
 type AggregationFunction = T.AggregationFunction
 
@@ -88,6 +92,7 @@ data QueryResponse = QueryResponse { _qrCode :: Int32
 
 makeLenses ''LogMessage
 makeLenses ''LogResponse
+makeLenses ''PingResponse
 makeLenses ''ColumnExpression
 makeLenses ''Condition
 makeLenses ''Query
