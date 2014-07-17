@@ -81,6 +81,8 @@ type ColumnName = Text
 
 type ServerID = Int32
 
+type Row = Vector.Vector ResponseValue
+
 data ColumnValue = ColumnValue{f_ColumnValue_stringValue :: Maybe Text,f_ColumnValue_intValue :: Maybe Int64,f_ColumnValue_stringSet :: Maybe (Set.HashSet Text),f_ColumnValue_stringVector :: Maybe (Vector.Vector Text)} deriving (Show,Eq,Typeable)
 instance Hashable ColumnValue where
   hashWithSalt salt record = salt   `hashWithSalt` f_ColumnValue_stringValue record   `hashWithSalt` f_ColumnValue_intValue record   `hashWithSalt` f_ColumnValue_stringSet record   `hashWithSalt` f_ColumnValue_stringVector record  
@@ -542,37 +544,7 @@ read_ResponseValue iprot = do
   record <- read_ResponseValue_fields iprot (ResponseValue{f_ResponseValue_stringValue=Nothing,f_ResponseValue_intValue=Nothing,f_ResponseValue_stringSet=Nothing,f_ResponseValue_stringVector=Nothing,f_ResponseValue_doubleValue=Nothing,f_ResponseValue_isNull=Nothing})
   readStructEnd iprot
   return record
-data Row = Row{f_Row_values :: Maybe (Vector.Vector ResponseValue)} deriving (Show,Eq,Typeable)
-instance Hashable Row where
-  hashWithSalt salt record = salt   `hashWithSalt` f_Row_values record  
-write_Row oprot record = do
-  writeStructBegin oprot "Row"
-  case f_Row_values record of {Nothing -> return (); Just _v -> do
-    writeFieldBegin oprot ("values",T_LIST,1)
-    (let f = Vector.mapM_ (\_viter91 -> write_ResponseValue oprot _viter91) in do {writeListBegin oprot (T_STRUCT,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
-    writeFieldEnd oprot}
-  writeFieldStop oprot
-  writeStructEnd oprot
-read_Row_fields iprot record = do
-  (_,_t93,_id94) <- readFieldBegin iprot
-  if _t93 == T_STOP then return record else
-    case _id94 of 
-      1 -> if _t93 == T_LIST then do
-        s <- (let f n = Vector.replicateM (fromIntegral n) ((read_ResponseValue iprot)) in do {(_etype98,_size95) <- readListBegin iprot; f _size95})
-        read_Row_fields iprot record{f_Row_values=Just s}
-        else do
-          skip iprot _t93
-          read_Row_fields iprot record
-      _ -> do
-        skip iprot _t93
-        readFieldEnd iprot
-        read_Row_fields iprot record
-read_Row iprot = do
-  _ <- readStructBegin iprot
-  record <- read_Row_fields iprot (Row{f_Row_values=Nothing})
-  readStructEnd iprot
-  return record
-data QueryResponse = QueryResponse{f_QueryResponse_code :: Maybe Int32,f_QueryResponse_message :: Maybe Text,f_QueryResponse_rows :: Maybe (Vector.Vector Row)} deriving (Show,Eq,Typeable)
+data QueryResponse = QueryResponse{f_QueryResponse_code :: Maybe Int32,f_QueryResponse_message :: Maybe Text,f_QueryResponse_rows :: Maybe (Vector.Vector (Vector.Vector ResponseValue))} deriving (Show,Eq,Typeable)
 instance Hashable QueryResponse where
   hashWithSalt salt record = salt   `hashWithSalt` f_QueryResponse_code record   `hashWithSalt` f_QueryResponse_message record   `hashWithSalt` f_QueryResponse_rows record  
 write_QueryResponse oprot record = do
@@ -587,34 +559,34 @@ write_QueryResponse oprot record = do
     writeFieldEnd oprot}
   case f_QueryResponse_rows record of {Nothing -> return (); Just _v -> do
     writeFieldBegin oprot ("rows",T_LIST,3)
-    (let f = Vector.mapM_ (\_viter102 -> write_Row oprot _viter102) in do {writeListBegin oprot (T_STRUCT,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
+    (let f = Vector.mapM_ (\_viter91 -> (let f = Vector.mapM_ (\_viter92 -> write_ResponseValue oprot _viter92) in do {writeListBegin oprot (T_STRUCT,fromIntegral $ Vector.length _viter91); f _viter91;writeListEnd oprot})) in do {writeListBegin oprot (T_LIST,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
     writeFieldEnd oprot}
   writeFieldStop oprot
   writeStructEnd oprot
 read_QueryResponse_fields iprot record = do
-  (_,_t104,_id105) <- readFieldBegin iprot
-  if _t104 == T_STOP then return record else
-    case _id105 of 
-      1 -> if _t104 == T_I32 then do
+  (_,_t94,_id95) <- readFieldBegin iprot
+  if _t94 == T_STOP then return record else
+    case _id95 of 
+      1 -> if _t94 == T_I32 then do
         s <- readI32 iprot
         read_QueryResponse_fields iprot record{f_QueryResponse_code=Just s}
         else do
-          skip iprot _t104
+          skip iprot _t94
           read_QueryResponse_fields iprot record
-      2 -> if _t104 == T_STRING then do
+      2 -> if _t94 == T_STRING then do
         s <- readString iprot
         read_QueryResponse_fields iprot record{f_QueryResponse_message=Just s}
         else do
-          skip iprot _t104
+          skip iprot _t94
           read_QueryResponse_fields iprot record
-      3 -> if _t104 == T_LIST then do
-        s <- (let f n = Vector.replicateM (fromIntegral n) ((read_Row iprot)) in do {(_etype109,_size106) <- readListBegin iprot; f _size106})
+      3 -> if _t94 == T_LIST then do
+        s <- (let f n = Vector.replicateM (fromIntegral n) ((let f n = Vector.replicateM (fromIntegral n) ((read_ResponseValue iprot)) in do {(_etype104,_size101) <- readListBegin iprot; f _size101})) in do {(_etype99,_size96) <- readListBegin iprot; f _size96})
         read_QueryResponse_fields iprot record{f_QueryResponse_rows=Just s}
         else do
-          skip iprot _t104
+          skip iprot _t94
           read_QueryResponse_fields iprot record
       _ -> do
-        skip iprot _t104
+        skip iprot _t94
         readFieldEnd iprot
         read_QueryResponse_fields iprot record
 read_QueryResponse iprot = do
@@ -638,23 +610,23 @@ write_PingResponse oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_PingResponse_fields iprot record = do
-  (_,_t114,_id115) <- readFieldBegin iprot
-  if _t114 == T_STOP then return record else
-    case _id115 of 
-      1 -> if _t114 == T_I32 then do
+  (_,_t109,_id110) <- readFieldBegin iprot
+  if _t109 == T_STOP then return record else
+    case _id110 of 
+      1 -> if _t109 == T_I32 then do
         s <- readI32 iprot
         read_PingResponse_fields iprot record{f_PingResponse_code=Just s}
         else do
-          skip iprot _t114
+          skip iprot _t109
           read_PingResponse_fields iprot record
-      2 -> if _t114 == T_STRING then do
+      2 -> if _t109 == T_STRING then do
         s <- readString iprot
         read_PingResponse_fields iprot record{f_PingResponse_message=Just s}
         else do
-          skip iprot _t114
+          skip iprot _t109
           read_PingResponse_fields iprot record
       _ -> do
-        skip iprot _t114
+        skip iprot _t109
         readFieldEnd iprot
         read_PingResponse_fields iprot record
 read_PingResponse iprot = do

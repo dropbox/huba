@@ -45,11 +45,11 @@ write_Ping_args oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_Ping_args_fields iprot record = do
-  (_,_t119,_id120) <- readFieldBegin iprot
-  if _t119 == T_STOP then return record else
-    case _id120 of 
+  (_,_t114,_id115) <- readFieldBegin iprot
+  if _t114 == T_STOP then return record else
+    case _id115 of 
       _ -> do
-        skip iprot _t119
+        skip iprot _t114
         readFieldEnd iprot
         read_Ping_args_fields iprot record
 read_Ping_args iprot = do
@@ -69,17 +69,17 @@ write_Ping_result oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_Ping_result_fields iprot record = do
-  (_,_t124,_id125) <- readFieldBegin iprot
-  if _t124 == T_STOP then return record else
-    case _id125 of 
-      0 -> if _t124 == T_STRUCT then do
+  (_,_t119,_id120) <- readFieldBegin iprot
+  if _t119 == T_STOP then return record else
+    case _id120 of 
+      0 -> if _t119 == T_STRUCT then do
         s <- (read_PingResponse iprot)
         read_Ping_result_fields iprot record{f_Ping_result_success=Just s}
         else do
-          skip iprot _t124
+          skip iprot _t119
           read_Ping_result_fields iprot record
       _ -> do
-        skip iprot _t124
+        skip iprot _t119
         readFieldEnd iprot
         read_Ping_result_fields iprot record
 read_Ping_result iprot = do

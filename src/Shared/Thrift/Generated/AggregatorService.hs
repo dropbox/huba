@@ -50,17 +50,17 @@ write_Query_args oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_Query_args_fields iprot record = do
-  (_,_t145,_id146) <- readFieldBegin iprot
-  if _t145 == T_STOP then return record else
-    case _id146 of 
-      1 -> if _t145 == T_STRUCT then do
+  (_,_t140,_id141) <- readFieldBegin iprot
+  if _t140 == T_STOP then return record else
+    case _id141 of 
+      1 -> if _t140 == T_STRUCT then do
         s <- (read_Query iprot)
         read_Query_args_fields iprot record{f_Query_args_query=Just s}
         else do
-          skip iprot _t145
+          skip iprot _t140
           read_Query_args_fields iprot record
       _ -> do
-        skip iprot _t145
+        skip iprot _t140
         readFieldEnd iprot
         read_Query_args_fields iprot record
 read_Query_args iprot = do
@@ -80,17 +80,17 @@ write_Query_result oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_Query_result_fields iprot record = do
-  (_,_t150,_id151) <- readFieldBegin iprot
-  if _t150 == T_STOP then return record else
-    case _id151 of 
-      0 -> if _t150 == T_STRUCT then do
+  (_,_t145,_id146) <- readFieldBegin iprot
+  if _t145 == T_STOP then return record else
+    case _id146 of 
+      0 -> if _t145 == T_STRUCT then do
         s <- (read_QueryResponse iprot)
         read_Query_result_fields iprot record{f_Query_result_success=Just s}
         else do
-          skip iprot _t150
+          skip iprot _t145
           read_Query_result_fields iprot record
       _ -> do
-        skip iprot _t150
+        skip iprot _t145
         readFieldEnd iprot
         read_Query_result_fields iprot record
 read_Query_result iprot = do

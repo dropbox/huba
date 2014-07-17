@@ -79,8 +79,10 @@ data ResponseValue = RDoubleValue Double
                    | RNull
   deriving (Show, Eq)
 
-data Row = Row { _rValues :: Vector ResponseValue }
-  deriving (Show, Eq)
+-- data Row = Row { _rValues :: Vector ResponseValue }
+--   deriving (Show, Eq)
+
+type Row = Vector ResponseValue
 
 data QueryResponse = QueryResponse { _qrCode :: Int32
                                    , _qrMessage :: Maybe Text
@@ -96,5 +98,5 @@ makeLenses ''PingResponse
 makeLenses ''ColumnExpression
 makeLenses ''Condition
 makeLenses ''Query
-makeLenses ''Row
+-- makeLenses ''Row
 makeLenses ''QueryResponse

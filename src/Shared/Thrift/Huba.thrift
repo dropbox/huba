@@ -141,9 +141,7 @@ union ResponseValue {
   6: bool isNull,
 }
 
-struct Row {
-  1: required list<ResponseValue> values,
-}
+typedef list<ResponseValue> Row
 
 struct QueryResponse {
   1: required i32 code,
