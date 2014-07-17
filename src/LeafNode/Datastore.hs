@@ -6,96 +6,40 @@ import Shared.Thrift.Types as T
 import Shared.Thrift.Interface
 import Shared.Comparison
 import Shared.Query (orderRows)
+import LeafNode.Aggregations
 
 import qualified Data.Vector as V
-import Data.List (insert, sortBy)
+import Data.List (insert, sortBy, groupBy)
 
+import Control.Monad (liftM)
 import Control.Lens
 import Control.Lens.TH
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing, fromJust)
 
 import Data.Int (Int32)
 import Data.Ord (comparing)
-import Data.Maybe
+
+import Data.Function (on)
 
 import qualified Data.HashMap.Strict as H
 
-
+import qualified Data.Map.Lazy as L
 
 type LeafStore = [LogMessage]
 
-
+{- Store a batch of messages in a LeafStore -}
 ingestBatch :: LeafStore -> LogBatch -> LeafStore
 ingestBatch = V.foldl' (flip insert)
 
-getMessagesInTimeRange :: LeafStore -> Timestamp -> Timestamp -> [LogMessage]
-getMessagesInTimeRange store timeStart timeEnd = filter
-                                                 (\x -> ((x ^. lmTimestamp) >= timeStart) && ((x ^. lmTimestamp) <= timeEnd))
-                                                 store
-
-
-getColFromMessage :: ColumnName -> LogMessage -> Maybe ColumnValue
-getColFromMessage name msg = msg ^. lmColumns . at name
-
-
-makeCondition :: Condition -> (LogMessage -> Bool)
-makeCondition (Condition col comp val) msg = let compFn = case comp of T.EQ -> columnValueEQ
-                                                                       T.NEQ -> columnValueNEQ
-
-                                                                       T.GT -> columnValueGT
-                                                                       T.LT -> columnValueLT
-                                                                       T.GTE -> columnValueGTE
-                                                                       T.LTE -> columnValueLTE
-
-                                                                       T.REGEXP_EQ -> columnValueREGEXPEQ in
-
-  fromMaybe False $ do
-    colValue <- getColFromMessage col msg
-    return (colValue `compFn` val)
-
-
-
-
-makeConditions :: [Condition] -> (LogMessage -> Bool)
-makeConditions conditions message = all (($ message) . makeCondition) conditions
-
--- selectAggregator
--- aggAggregator
-
--- data Aggregator = Aggregator (State a)
-
--- aggregator :: LogMessage -> a -> [Row]
-
-
-extractColumns :: V.Vector ColumnName -> LogMessage -> Row
-extractColumns cols (LogMessage _ _ columns) = Row (fmap getColumnValue cols) where
-    getColumnValue :: ColumnName -> ResponseValue
-    getColumnValue col = fromMaybe RNull $ do
-                           columnValue <- H.lookup col columns
-                           return (columnValueToResponseValue columnValue)
-
-isSimpleQuery :: Query -> Bool
-isSimpleQuery (Query columnExpressions _ _ _ _ groupBy _ _) = isNothing groupBy &&
-                                                              V.all (== CONSTANT)  (fmap (^. ceAggregationFunction) columnExpressions)
-
-processRows :: Query -> [LogMessage] -> [Row] -- TODO: let's rename Row to ResponseRow
-processRows q@(Query columnExpressions _ _ _ _ groupBy _ _) rows =
-    if isSimpleQuery q then let columnNames = fmap (^. ceColumn) columnExpressions in
-                            map (extractColumns columnNames) rows
-    else []
-
-    -- do
-    --   return ()
-
-    -- where groups = H.empty :: HashMap [ColumnName] Aggregator
-    -- For each row, select the right aggregator (based on the groupBy) and run it on the row
-    -- The aggregator emits a new state
-
+{- Answer a query -}
 query :: LeafStore -> Query -> QueryResponse
 query store q = QueryResponse 0 Nothing (Just $ V.fromList responseRows)
     where
       -- Get the rows in the desired time range
       rowsInTimeRange = getMessagesInTimeRange store (q ^. qTimeStart) (q ^. qTimeEnd)
+
+      -- TODO: make this and filterFn nicer
+      makeConditions conds message = all (($ message) . makeCondition) conds
 
       filterFn :: [LogMessage] -> [LogMessage]
       filterFn = let conditionFn = case q ^. qConditions of
@@ -103,9 +47,9 @@ query store q = QueryResponse 0 Nothing (Just $ V.fromList responseRows)
                                      Just conditions -> makeConditions $ V.toList conditions in
                  -- Filter by all the conditions plus the table match
                  filter (\x -> conditionFn x && (q ^. qTable == x ^. lmTable))
-                 -- TODO: let's make conditions a [Condition] instead of a Vector Condition, yes?
+                 -- TODO: let's make conditions a [Condition] instead of a Vector Condition (?)
 
-      processFn = processRows q
+      processFn = processMessages q
 
       responseRows = (take (q ^. qLimit) . orderRows q . processFn . filterFn) rowsInTimeRange
       -- TODO: make sure the sort interacts with the limit/processing efficiently here.
@@ -115,23 +59,58 @@ query store q = QueryResponse 0 Nothing (Just $ V.fromList responseRows)
       -- Alternatively you can do n log k by continually doing sorted insert (and delete)
       -- into a binary tree of size k
 
+----------------------------------------------------------------------------------------------------------
+
+processMessages :: Query -> [LogMessage] -> [Row] -- TODO: let's rename Row to ResponseRow
+processMessages q@(Query ce _ _ _ _ groupBy _ _) msgs =
+    if isNothing groupBy then
+        if isSimpleQuery q then
+            map (extractColumnsAsRow $ fmap (^. ceColumn) ce) msgs
+        else
+            [processSingleGroupBy q msgs]
+    else map (processSingleGroupBy q) (groupLogMessages (fromJust groupBy) msgs)
 
 
--------------------------
+getMessagesInTimeRange :: LeafStore -> Timestamp -> Timestamp -> [LogMessage]
+getMessagesInTimeRange store timeStart timeEnd = filter
+                                                 (\x -> ((x ^. lmTimestamp) >= timeStart) && ((x ^. lmTimestamp) <= timeEnd))
+                                                 store
 
--- type ConName = String
+extractColumnValues :: V.Vector ColumnName -> LogMessage -> V.Vector (Maybe ColumnValue)
+extractColumnValues cols (LogMessage _ _ columns) = fmap (`H.lookup` columns) cols
 
--- data AggFn = Constant | Sum | Count
--- data Aggregator = Aggregator ColName AggFn
+extractColumnsAsRow :: V.Vector ColumnName -> LogMessage -> Row
+extractColumnsAsRow cols msg = Row $ fmap (fromMaybe RNull . liftM columnValueToResponseValue)
+                                          (extractColumnValues cols msg)
 
+isSimpleQuery :: Query -> Bool
+isSimpleQuery (Query columnExpressions _ _ _ _ groupBy _ _) = isNothing groupBy &&
+                                                              V.all (== CONSTANT)  (fmap (^. ceAggregationFunction) columnExpressions)
+{-
+  Given a query and a collection of log messages belonging to a single groupBy
+  value, generate the single Row for the groupBy value.
+ -}
+processSingleGroupBy :: Query -> [LogMessage] -> Row
+processSingleGroupBy (Query columnExpressions _ _ _ _ groupBy _ _) rows =
+    Row $ foldl aggFn initialValues (map projectionFn rows) where
+        columnNames = fmap (^. ceColumn) columnExpressions
+        aggregationFunctions = fmap (^. ceAggregationFunction) columnExpressions
 
--- project :: Row -> Aggregator -> Aggregate
--- project row (Aggregator colName Sum) = Aggregate $ getCol colName row
--- project row (Aggregator colName Count) = Aggregate $ 1
--- project row (Aggregator colName Constant) = Aggregate $ getCol colName row
+        projectionFn = extractColumnValues columnNames
 
+        aggFunctionsAndInitialValues = V.map aggFunctionAndInitialValue aggregationFunctions
 
--- aggAppend :: AggFn -> Aggregate -> Aggregate -> Aggregate
--- aggAppend Sum (Aggregate x) (Aggregate y) = Aggregate (x + y)
--- aggAppend Count (Aggregate x) (Aggregate y) = Aggregate (x + y)
--- aggAppend Constant a1 _ = a1
+        aggFns = V.map fst aggFunctionsAndInitialValues :: V.Vector FoldFunction
+        initialValues = V.map snd aggFunctionsAndInitialValues :: V.Vector ResponseValue
+
+        aggFn = V.zipWith3 ($) aggFns :: V.Vector ResponseValue -> V.Vector (Maybe ColumnValue) -> V.Vector ResponseValue
+
+{-
+  Given a groupBy and a list of log messages, create a list of lists of log messages
+  that have been partitioned by the groupBy. TODO: make sure this is efficient. It's
+  probably not, but maybe the lazy map and lazy list will play together well.
+ -}
+groupLogMessages :: GroupBy -> [LogMessage] -> [[LogMessage]]
+groupLogMessages columns msgs = L.elems $ partition project msgs where
+    partition f xs = L.fromListWith (++) [(f x, [x]) | x <- xs]
+    project = extractColumnValues columns

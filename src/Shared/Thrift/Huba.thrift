@@ -55,7 +55,7 @@ namespace hs HubaThrift
 typedef string ColumnName
 typedef i32 ServerID
 
-/*** Logging data structures ***/
+/** Logging data structures **/
 
 union ColumnValue {
   1: string stringValue,
@@ -81,7 +81,7 @@ exception InvalidLogMessageException {
 }
 
 
-/*** Querying data structures ***/
+/** Querying data structures **/
 
 enum AggregationFunction {
   CONSTANT = 0,

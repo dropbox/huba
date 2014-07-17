@@ -1,6 +1,31 @@
 module Shared.Comparison where
 
-import Shared.Thrift.Types
+import Shared.Thrift.Types as T
+import Control.Lens.TH
+import Control.Lens
+
+import Data.Maybe (fromMaybe)
+
+{-
+  Given a Condition, generate a predicate on LogMessages to decide
+  whether the LogMessage matches the condition
+ -}
+makeCondition :: Condition -> (LogMessage -> Bool)
+makeCondition (Condition col comp val) msg = let compFn = case comp of T.EQ -> columnValueEQ
+                                                                       T.NEQ -> columnValueNEQ
+
+                                                                       T.GT -> columnValueGT
+                                                                       T.LT -> columnValueLT
+                                                                       T.GTE -> columnValueGTE
+                                                                       T.LTE -> columnValueLTE
+
+                                                                       T.REGEXP_EQ -> columnValueREGEXPEQ in
+  fromMaybe False $ do
+    colValue <- getColFromMessage col msg
+    return (colValue `compFn` val)
+
+getColFromMessage :: ColumnName -> LogMessage -> Maybe ColumnValue
+getColFromMessage name msg = msg ^. lmColumns . at name
 
 columnValueEQ :: ColumnValue -> ColumnValue -> Bool
 columnValueEQ (StringValue v1)  (StringValue v2)  = v1 == v2
@@ -67,6 +92,28 @@ instance Ord ResponseValue where
     RDoubleValue _ `compare` RNull = Prelude.GT
 
     -- TODO...
+
+
+instance Ord ColumnValue where
+    IntValue i1    `compare` IntValue i2    = i1 `compare` i2
+    StringValue t1 `compare` StringValue t2 = t1 `compare` t2
+    StringSet _    `compare` StringSet _    = Prelude.EQ
+    StringVector _ `compare` StringVector _ = Prelude.EQ
+
+    -- Note that we need to define this for mixed types like StringValue compared with IntValue.
+    -- Let's just impose an absolute order on types, i.e.
+    -- IntValue > StringValue > StringSet > StringVector
+    -- How can we do this concisely? I.e. not like the following:
+
+    IntValue _ `compare` StringValue _ = Prelude.GT
+    IntValue _ `compare` StringSet _ = Prelude.GT
+    IntValue _ `compare` StringVector _ = Prelude.GT
+
+    StringValue _ `compare` StringSet _ = Prelude.GT
+    StringValue _ `compare` StringVector _ = Prelude.GT
+
+    StringSet _ `compare` StringVector _ = Prelude.GT
+
 
 
 columnValueToResponseValue :: ColumnValue -> ResponseValue

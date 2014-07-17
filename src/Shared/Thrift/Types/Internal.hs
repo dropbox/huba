@@ -17,6 +17,7 @@ import Control.Lens.TH
 type ColumnName = T.ColumnName
 type ServerID = T.ServerID
 type Timestamp = Int64
+type GroupBy = Vector ColumnName
 
 data ColumnValue = StringValue Text
                  | IntValue Timestamp
@@ -60,7 +61,7 @@ data Query = Query { _qColumnExpressions :: Vector ColumnExpression
                    , _qTimeStart :: Timestamp
                    , _qTimeEnd :: Timestamp
                    , _qConditions :: Maybe (Vector Condition)
-                   , _qGroupBy :: Maybe (Vector ColumnName)
+                   , _qGroupBy :: Maybe GroupBy
                    , _qOrderBy :: Maybe Int
                    , _qLimit :: Int
                    }
