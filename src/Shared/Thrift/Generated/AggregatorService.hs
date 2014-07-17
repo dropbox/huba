@@ -33,6 +33,7 @@ import Thrift
 import Thrift.Types ()
 
 
+import qualified CommonService
 import Huba_Types
 import qualified AggregatorService_Iface as Iface
 -- HELPER FUNCTIONS AND STRUCTURES --
@@ -49,17 +50,17 @@ write_Query_args oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_Query_args_fields iprot record = do
-  (_,_t130,_id131) <- readFieldBegin iprot
-  if _t130 == T_STOP then return record else
-    case _id131 of 
-      1 -> if _t130 == T_STRUCT then do
+  (_,_t145,_id146) <- readFieldBegin iprot
+  if _t145 == T_STOP then return record else
+    case _id146 of 
+      1 -> if _t145 == T_STRUCT then do
         s <- (read_Query iprot)
         read_Query_args_fields iprot record{f_Query_args_query=Just s}
         else do
-          skip iprot _t130
+          skip iprot _t145
           read_Query_args_fields iprot record
       _ -> do
-        skip iprot _t130
+        skip iprot _t145
         readFieldEnd iprot
         read_Query_args_fields iprot record
 read_Query_args iprot = do
@@ -79,17 +80,17 @@ write_Query_result oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_Query_result_fields iprot record = do
-  (_,_t135,_id136) <- readFieldBegin iprot
-  if _t135 == T_STOP then return record else
-    case _id136 of 
-      0 -> if _t135 == T_STRUCT then do
+  (_,_t150,_id151) <- readFieldBegin iprot
+  if _t150 == T_STOP then return record else
+    case _id151 of 
+      0 -> if _t150 == T_STRUCT then do
         s <- (read_QueryResponse iprot)
         read_Query_result_fields iprot record{f_Query_result_success=Just s}
         else do
-          skip iprot _t135
+          skip iprot _t150
           read_Query_result_fields iprot record
       _ -> do
-        skip iprot _t135
+        skip iprot _t150
         readFieldEnd iprot
         read_Query_result_fields iprot record
 read_Query_result iprot = do
@@ -110,13 +111,7 @@ process_query (seqid, iprot, oprot, handler) = do
   tFlush (getTransport oprot)
 proc_ handler (iprot,oprot) (name,typ,seqid) = case name of
   "query" -> process_query (seqid,iprot,oprot,handler)
-  _ -> do
-    skip iprot T_STRUCT
-    readMessageEnd iprot
-    writeMessageBegin oprot (name,M_EXCEPTION,seqid)
-    writeAppExn oprot (AppExn AE_UNKNOWN_METHOD ("Unknown function " ++ TL.unpack name))
-    writeMessageEnd oprot
-    tFlush (getTransport oprot)
+  _ -> CommonService.proc_ handler (iprot,oprot) (name,typ,seqid)
 process handler (iprot, oprot) = do
   (name, typ, seqid) <- readMessageBegin iprot
   proc_ handler (iprot,oprot) (name,typ,seqid)

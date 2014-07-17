@@ -622,3 +622,43 @@ read_QueryResponse iprot = do
   record <- read_QueryResponse_fields iprot (QueryResponse{f_QueryResponse_code=Nothing,f_QueryResponse_message=Nothing,f_QueryResponse_rows=Nothing})
   readStructEnd iprot
   return record
+data PingResponse = PingResponse{f_PingResponse_code :: Maybe Int32,f_PingResponse_message :: Maybe Text} deriving (Show,Eq,Typeable)
+instance Hashable PingResponse where
+  hashWithSalt salt record = salt   `hashWithSalt` f_PingResponse_code record   `hashWithSalt` f_PingResponse_message record  
+write_PingResponse oprot record = do
+  writeStructBegin oprot "PingResponse"
+  case f_PingResponse_code record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("code",T_I32,1)
+    writeI32 oprot _v
+    writeFieldEnd oprot}
+  case f_PingResponse_message record of {Nothing -> return (); Just _v -> do
+    writeFieldBegin oprot ("message",T_STRING,2)
+    writeString oprot _v
+    writeFieldEnd oprot}
+  writeFieldStop oprot
+  writeStructEnd oprot
+read_PingResponse_fields iprot record = do
+  (_,_t114,_id115) <- readFieldBegin iprot
+  if _t114 == T_STOP then return record else
+    case _id115 of 
+      1 -> if _t114 == T_I32 then do
+        s <- readI32 iprot
+        read_PingResponse_fields iprot record{f_PingResponse_code=Just s}
+        else do
+          skip iprot _t114
+          read_PingResponse_fields iprot record
+      2 -> if _t114 == T_STRING then do
+        s <- readString iprot
+        read_PingResponse_fields iprot record{f_PingResponse_message=Just s}
+        else do
+          skip iprot _t114
+          read_PingResponse_fields iprot record
+      _ -> do
+        skip iprot _t114
+        readFieldEnd iprot
+        read_PingResponse_fields iprot record
+read_PingResponse iprot = do
+  _ <- readStructBegin iprot
+  record <- read_PingResponse_fields iprot (PingResponse{f_PingResponse_code=Nothing,f_PingResponse_message=Nothing})
+  readStructEnd iprot
+  return record

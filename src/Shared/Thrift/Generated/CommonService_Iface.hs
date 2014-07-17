@@ -12,7 +12,7 @@
 -- DO NOT EDIT UNLESS YOU ARE SURE YOU KNOW WHAT YOU ARE DOING --
 -----------------------------------------------------------------
 
-module AggregatorService_Iface where
+module CommonService_Iface where
 import Prelude ( Bool(..), Enum, Double, String, Maybe(..),
                  Eq, Show, Ord,
                  return, length, IO, fromIntegral, fromEnum, toEnum,
@@ -35,6 +35,5 @@ import Thrift.Types ()
 
 import Huba_Types
 
-import CommonService_Iface
-class CommonService_Iface a => AggregatorService_Iface a where
-  query :: a -> Maybe Query -> IO QueryResponse
+class CommonService_Iface a where
+  ping :: a -> IO PingResponse

@@ -151,24 +151,33 @@ struct QueryResponse {
   3: optional list<Row> rows,
 }
 
+struct PingResponse {
+  1: required i32 code,
+  2: optional string message
+}
+
 
 /**
  * Services just need a name and can optionally inherit from another service using the extends keyword.
  */
 
-service IngestorService {
+service CommonService {
+  PingResponse ping()
+}
+
+service IngestorService extends CommonService {
   LogResponse log(1:list<LogMessage> logBatch),
 }
 
-service AggregatorService {
-  QueryResponse query(1:Query query)
+service AggregatorService extends CommonService {
+  QueryResponse query(1:Query query),
 }
 
-service InternalAggregatorService {
-  QueryResponse queryInternal(1:Query query, 2:list<ServerID> serverIDs)
+service InternalAggregatorService extends CommonService {
+  QueryResponse queryInternal(1:Query query, 2:list<ServerID> serverIDs),
 }
 
-service LeafNodeService {
+service LeafNodeService extends CommonService {
   LogResponse log(1:required list<LogMessage> logBatch),
   QueryResponse query(1:Query query)
 }

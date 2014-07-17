@@ -35,5 +35,6 @@ import Thrift.Types ()
 
 import Huba_Types
 
-class InternalAggregatorService_Iface a where
+import CommonService_Iface
+class CommonService_Iface a => InternalAggregatorService_Iface a where
   queryInternal :: a -> Maybe Query -> Maybe (Vector.Vector Int32) -> IO QueryResponse

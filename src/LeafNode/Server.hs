@@ -17,6 +17,8 @@ data LeafNodeHandler = LeafNodeHandler (MVar LeafStore)
 newLeafNodeHandler :: IO LeafNodeHandler
 newLeafNodeHandler = LeafNodeHandler <$> newMVar []
 
+instance CommonService LeafNodeHandler
+
 instance LeafNodeService LeafNodeHandler where
   logLeaf :: LeafNodeHandler -> LogBatch -> IO LogResponse
   logLeaf (LeafNodeHandler logs) batch = do

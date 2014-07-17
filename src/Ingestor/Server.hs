@@ -19,6 +19,8 @@ data IngestorHandler = IngestorHandler ServerList -- leaf nodes
 newIngestorHandler :: IO IngestorHandler
 newIngestorHandler = IngestorHandler <$> getLeafNodes
 
+instance CommonService IngestorHandler
+
 -- TODO: choose based on memory constraints
 instance IngestorService IngestorHandler where
   logIngest :: IngestorHandler -> LogBatch -> IO LogResponse
@@ -29,6 +31,6 @@ instance IngestorService IngestorHandler where
     debugM "Ingestor" $ show messages
 
     fromJust <$> sendLeafLog leaf messages -- XXX fromJust
- 
+
 pick :: [a] -> IO a
 pick xs = randomRIO (0, length xs - 1) >>= return . (xs !!)
