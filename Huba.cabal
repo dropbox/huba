@@ -78,6 +78,7 @@ executable IngestorTestClient
                        vector >=0.10 && <0.11,
                        network >=2.5 && <2.6,
                        lens == 4.2,
+                       hslogger == 1.2.4,
                        random-fu >= 0.2.6.0,
                        random-source >= 0.3,
                        random-extras >= 0.19

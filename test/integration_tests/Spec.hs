@@ -28,29 +28,30 @@ import System.Timeout (timeout)
 import qualified Data.Random.Source.DevRandom as R
 import qualified Data.Random as R
 
+import Data.Maybe (isJust)
+
+import System.Log.Logger
 
 tests :: IO [Test]
 tests = do
-  putStrLn "Running integration tests..."
+  noticeM "Integration tests" "Running integration tests..."
 
   -- Start a number of servers
-  let n = 5
-      basePorts = take n $ iterate (+10) 8000
+  let n = 8
+      basePorts = take n $ iterate (+100) 8000
       portTuples = [(x, x+1, x+2, x+3) | x <- basePorts]
+      allPorts = concat [[x, x+1, x+2, x+3] | x <- basePorts]
 
   processes <- concat <$> forM portTuples runServer
 
-  -- TODO: ensure all ports respond to ping
-  -- Launch a bunch of simultaneous green threads that do pings, and return when they're happy
-  -- If any of them don't succeed within some timeout, fail the test
-  let firstProcess = head processes
+  -- Make sure all services respond to ping within some timeout
   pingResponses <- mapConcurrently
                    (\x -> timeout (5 * 10^6) (waitForServer $ Server "localhost" x))
-                   [8000]
+                   allPorts
+  if (length . filter isJust) pingResponses < length allPorts then
+      noticeM "Integration tests" "FAILURE: Not all servers responded to ping" else
+      noticeM "Integration tests" "SUCCESS on ping test"
 
-  -- Uncommenting this line lets us wait on all the processes
-  -- _ <- waitAny $ concat processes
-  -- waitAny [pings]
 
   -- Send a bunch of random LogMessages into the system
   transport <- hOpen ("localhost" :: String, PortNumber 8000)
@@ -65,6 +66,8 @@ tests = do
          resp <- IngestorClient.log protocols $ V.fromList $ map toThrift (toList msgs)
          putStrLn $ "Got response: " ++ show resp
 
+  -- Uncommenting this line lets us wait on all the processes
+  -- _ <- waitAny $ concat processes
 
   -- Now launch some queries!
   -- TODO: maybe convert this test suite to detailed-1.0. Then we can print useful

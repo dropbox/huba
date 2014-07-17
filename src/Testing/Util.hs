@@ -24,6 +24,8 @@ import Control.Applicative ((<$>))
 
 import Data.Maybe (fromMaybe)
 
+import System.Log.Logger
+
 genRandomLogMessage = do
   ts <- R.uniform 0 100000
   table <- RE.choice ["tableA", "tableB", "tableC"]
@@ -39,7 +41,7 @@ genRandomLogMessage = do
 
 waitForServer :: Server -> IO PingResponse
 waitForServer server = do
-    putStrLn $ "About to try pinging: " ++ show server
+    noticeM "Pinger" $ "About to try pinging: " ++ show server
     resp <- catch (sendPing server) (\e -> do
                                        let err = show (e :: SomeException)
                                        putStrLn "Exception on ping!"
