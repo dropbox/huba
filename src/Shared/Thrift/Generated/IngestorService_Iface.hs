@@ -35,5 +35,6 @@ import Thrift.Types ()
 
 import Huba_Types
 
-class IngestorService_Iface a where
+import CommonService_Iface
+class CommonService_Iface a => IngestorService_Iface a where
   log :: a -> Maybe (Vector.Vector LogMessage) -> IO LogResponse

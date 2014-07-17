@@ -13,6 +13,7 @@
 -----------------------------------------------------------------
 
 module InternalAggregatorService_Client(queryInternal) where
+import CommonService_Client
 import Data.IORef
 import Prelude ( Bool(..), Enum, Double, String, Maybe(..),
                  Eq, Show, Ord,

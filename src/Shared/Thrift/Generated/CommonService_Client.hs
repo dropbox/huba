@@ -12,7 +12,8 @@
 -- DO NOT EDIT UNLESS YOU ARE SURE YOU KNOW WHAT YOU ARE DOING --
 -----------------------------------------------------------------
 
-module AggregatorService_Iface where
+module CommonService_Client(ping) where
+import Data.IORef
 import Prelude ( Bool(..), Enum, Double, String, Maybe(..),
                  Eq, Show, Ord,
                  return, length, IO, fromIntegral, fromEnum, toEnum,
@@ -34,7 +35,28 @@ import Thrift.Types ()
 
 
 import Huba_Types
-
-import CommonService_Iface
-class CommonService_Iface a => AggregatorService_Iface a where
-  query :: a -> Maybe Query -> IO QueryResponse
+import CommonService
+seqid = newIORef 0
+ping (ip,op) = do
+  send_ping op
+  recv_ping ip
+send_ping op = do
+  seq <- seqid
+  seqn <- readIORef seq
+  writeMessageBegin op ("ping", M_CALL, seqn)
+  write_Ping_args op (Ping_args{})
+  writeMessageEnd op
+  tFlush (getTransport op)
+recv_ping ip = do
+  (fname, mtype, rseqid) <- readMessageBegin ip
+  if mtype == M_EXCEPTION then do
+    x <- readAppExn ip
+    readMessageEnd ip
+    throw x
+    else return ()
+  res <- read_Ping_result ip
+  readMessageEnd ip
+  case f_Ping_result_success res of
+    Just v -> return v
+    Nothing -> do
+      throw (AppExn AE_MISSING_RESULT "ping failed: unknown result")

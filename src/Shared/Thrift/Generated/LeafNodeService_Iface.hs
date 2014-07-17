@@ -35,6 +35,7 @@ import Thrift.Types ()
 
 import Huba_Types
 
-class LeafNodeService_Iface a where
+import CommonService_Iface
+class CommonService_Iface a => LeafNodeService_Iface a where
   log :: a -> Maybe (Vector.Vector LogMessage) -> IO LogResponse
   query :: a -> Maybe Query -> IO QueryResponse

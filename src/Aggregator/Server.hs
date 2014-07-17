@@ -27,6 +27,8 @@ data RootAggregator = RootAggregator ServerList -- intermediate aggregators
 newRootAggregator :: IO RootAggregator
 newRootAggregator = RootAggregator <$> getIntermediateAggregators
 
+instance CommonService RootAggregator
+
 instance AggregatorService RootAggregator where
   queryAggregator :: RootAggregator -> Query -> IO QueryResponse
   queryAggregator (RootAggregator serverList) query = do
@@ -36,19 +38,21 @@ instance AggregatorService RootAggregator where
     debugM "RootAggregator" $ show query
     response <- sendInternalAggregatorQuery (getAggregator serverList $ head servers) (rootQueryTransform query) (V.fromList servers)
     return $ rootResponseTransform response
-        
+
 data IntermediateAggregator = IntermediateAggregator [Server] ServerList -- local leaf nodes, intermediate aggregators
 newIntermediateAggregator :: [Server] -> IO IntermediateAggregator
 newIntermediateAggregator leaves = IntermediateAggregator leaves <$> getIntermediateAggregators
 
+instance CommonService IntermediateAggregator
+
 instance InternalAggregatorService IntermediateAggregator where
   queryInternalAggregator :: IntermediateAggregator -> Query -> V.Vector ServerID -> IO QueryResponse
-  queryInternalAggregator (IntermediateAggregator leaves serverList) query serverIDs 
+  queryInternalAggregator (IntermediateAggregator leaves serverList) query serverIDs
     -- no more fanning out needed - query our local LeafNodes
     | V.length serverIDs == 1 = do
       infoM "LeafAggregator" $ "Received query.  Sending to local leaf nodes: " ++ show (leaves)
       debugM "LeafAggregator" $ show query
-      responses <- flip mapConcurrently leaves $ \leaf -> 
+      responses <- flip mapConcurrently leaves $ \leaf ->
         join <$> (timeout timeoutInterval $ sendLeafQuery leaf query)
       return $ aggregate query $ catMaybes responses
 
@@ -56,7 +60,7 @@ instance InternalAggregatorService IntermediateAggregator where
     | otherwise = do
       infoM "IntermediateAggregator" $ "Received query.  Fanning out to " ++ show (map (getAggregator serverList . V.head) $ fanout serverIDs)
       debugM "IntermediateAggregator" $ show query
-      responses <- flip mapConcurrently (fanout serverIDs) $ \ss -> 
+      responses <- flip mapConcurrently (fanout serverIDs) $ \ss ->
         join <$> (timeout timeoutInterval $ sendInternalAggregatorQuery (getAggregator serverList $ V.head ss) query ss)
       return $ aggregate query $ catMaybes responses
 

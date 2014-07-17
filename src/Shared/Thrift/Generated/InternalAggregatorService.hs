@@ -33,6 +33,7 @@ import Thrift
 import Thrift.Types ()
 
 
+import qualified CommonService
 import Huba_Types
 import qualified InternalAggregatorService_Iface as Iface
 -- HELPER FUNCTIONS AND STRUCTURES --
@@ -48,28 +49,28 @@ write_QueryInternal_args oprot record = do
     writeFieldEnd oprot}
   case f_QueryInternal_args_serverIDs record of {Nothing -> return (); Just _v -> do
     writeFieldBegin oprot ("serverIDs",T_LIST,2)
-    (let f = Vector.mapM_ (\_viter139 -> writeI32 oprot _viter139) in do {writeListBegin oprot (T_I32,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
+    (let f = Vector.mapM_ (\_viter154 -> writeI32 oprot _viter154) in do {writeListBegin oprot (T_I32,fromIntegral $ Vector.length _v); f _v;writeListEnd oprot})
     writeFieldEnd oprot}
   writeFieldStop oprot
   writeStructEnd oprot
 read_QueryInternal_args_fields iprot record = do
-  (_,_t141,_id142) <- readFieldBegin iprot
-  if _t141 == T_STOP then return record else
-    case _id142 of 
-      1 -> if _t141 == T_STRUCT then do
+  (_,_t156,_id157) <- readFieldBegin iprot
+  if _t156 == T_STOP then return record else
+    case _id157 of 
+      1 -> if _t156 == T_STRUCT then do
         s <- (read_Query iprot)
         read_QueryInternal_args_fields iprot record{f_QueryInternal_args_query=Just s}
         else do
-          skip iprot _t141
+          skip iprot _t156
           read_QueryInternal_args_fields iprot record
-      2 -> if _t141 == T_LIST then do
-        s <- (let f n = Vector.replicateM (fromIntegral n) (readI32 iprot) in do {(_etype146,_size143) <- readListBegin iprot; f _size143})
+      2 -> if _t156 == T_LIST then do
+        s <- (let f n = Vector.replicateM (fromIntegral n) (readI32 iprot) in do {(_etype161,_size158) <- readListBegin iprot; f _size158})
         read_QueryInternal_args_fields iprot record{f_QueryInternal_args_serverIDs=Just s}
         else do
-          skip iprot _t141
+          skip iprot _t156
           read_QueryInternal_args_fields iprot record
       _ -> do
-        skip iprot _t141
+        skip iprot _t156
         readFieldEnd iprot
         read_QueryInternal_args_fields iprot record
 read_QueryInternal_args iprot = do
@@ -89,17 +90,17 @@ write_QueryInternal_result oprot record = do
   writeFieldStop oprot
   writeStructEnd oprot
 read_QueryInternal_result_fields iprot record = do
-  (_,_t151,_id152) <- readFieldBegin iprot
-  if _t151 == T_STOP then return record else
-    case _id152 of 
-      0 -> if _t151 == T_STRUCT then do
+  (_,_t166,_id167) <- readFieldBegin iprot
+  if _t166 == T_STOP then return record else
+    case _id167 of 
+      0 -> if _t166 == T_STRUCT then do
         s <- (read_QueryResponse iprot)
         read_QueryInternal_result_fields iprot record{f_QueryInternal_result_success=Just s}
         else do
-          skip iprot _t151
+          skip iprot _t166
           read_QueryInternal_result_fields iprot record
       _ -> do
-        skip iprot _t151
+        skip iprot _t166
         readFieldEnd iprot
         read_QueryInternal_result_fields iprot record
 read_QueryInternal_result iprot = do
@@ -120,13 +121,7 @@ process_queryInternal (seqid, iprot, oprot, handler) = do
   tFlush (getTransport oprot)
 proc_ handler (iprot,oprot) (name,typ,seqid) = case name of
   "queryInternal" -> process_queryInternal (seqid,iprot,oprot,handler)
-  _ -> do
-    skip iprot T_STRUCT
-    readMessageEnd iprot
-    writeMessageBegin oprot (name,M_EXCEPTION,seqid)
-    writeAppExn oprot (AppExn AE_UNKNOWN_METHOD ("Unknown function " ++ TL.unpack name))
-    writeMessageEnd oprot
-    tFlush (getTransport oprot)
+  _ -> CommonService.proc_ handler (iprot,oprot) (name,typ,seqid)
 process handler (iprot, oprot) = do
   (name, typ, seqid) <- readMessageBegin iprot
   proc_ handler (iprot,oprot) (name,typ,seqid)
