@@ -82,9 +82,6 @@ instance TypeEquiv ResponseValue T.ResponseValue where
     fromThrift (T.ResponseValue Nothing  Nothing  Nothing  Nothing  Nothing  (Just _)) = Just $ RNull
     fromThrift _                                                   = Nothing
 
-instance TypeEquiv Row T.Row where
-    toThrift (Row v) = T.Row (Just $ toThrift v)
-    fromThrift (T.Row mv) = Row <$> (mv >>= fromThrift)
 
 instance TypeEquiv QueryResponse T.QueryResponse where
     toThrift (QueryResponse c m r) = T.QueryResponse (Just c) m (toThrift <$> r)

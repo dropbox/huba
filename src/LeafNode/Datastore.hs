@@ -14,7 +14,7 @@ import Data.List (insert, sortBy, groupBy)
 import Control.Monad (liftM)
 import Control.Lens
 import Control.Lens.TH
-import Data.Maybe (fromMaybe, isNothing, fromJust)
+import Data.Maybe (fromMaybe, isNothing, fromJust, catMaybes)
 
 import Data.Int (Int32)
 import Data.Ord (comparing)
@@ -35,7 +35,6 @@ ingestBatch = V.foldl' (flip insert)
 query :: LeafStore -> Query -> QueryResponse
 query store q = QueryResponse 0 Nothing (Just $ V.fromList responseRows)
     where
-      -- Get the rows in the desired time range
       rowsInTimeRange = getMessagesInTimeRange store (q ^. qTimeStart) (q ^. qTimeEnd)
 
       -- TODO: make this and filterFn nicer
@@ -45,43 +44,29 @@ query store q = QueryResponse 0 Nothing (Just $ V.fromList responseRows)
       filterFn = let conditionFn = case q ^. qConditions of
                                      Nothing -> const True
                                      Just conditions -> makeConditions $ V.toList conditions in
-                 -- Filter by all the conditions plus the table match
                  filter (\x -> conditionFn x && (q ^. qTable == x ^. lmTable))
-                 -- TODO: let's make conditions a [Condition] instead of a Vector Condition (?)
 
-      processFn = processMessages q
+      projectFn :: [LogMessage] -> [Row]
+      projectFn = liftM $ extractColumnsAsRow (fmap _ceColumn (q ^. qColumnExpressions))
 
-      responseRows = (take (q ^. qLimit) . orderRows q . processFn . filterFn) rowsInTimeRange
+      responseRows = (take (q ^. qLimit) . orderRows q . processGroupBys q . projectFn . filterFn) rowsInTimeRange
       -- TODO: make sure the sort interacts with the limit/processing efficiently here.
-      -- Taking k things from a sorted list of length n shouldn't take n log n.
-      -- You can do faster with a quicksort that ignores the part of the list it doesn't
-      -- need to sort.
-      -- Alternatively you can do n log k by continually doing sorted insert (and delete)
-      -- into a binary tree of size k
 
 ----------------------------------------------------------------------------------------------------------
 
-processMessages :: Query -> [LogMessage] -> [Row] -- TODO: let's rename Row to ResponseRow
-processMessages q@(Query ce _ _ _ _ groupBy _ _) msgs =
+processGroupBys :: Query -> [Row] -> [Row] -- TODO: let's rename Row to ResponseRow
+processGroupBys q@(Query ce _ _ _ _ groupBy _ _) rows =
     if isNothing groupBy then
         if isSimpleQuery q then
-            map (extractColumnsAsRow $ fmap (^. ceColumn) ce) msgs
+            rows
         else
-            [processSingleGroupBy q msgs]
-    else map (processSingleGroupBy q) (groupLogMessages (fromJust groupBy) msgs)
-
-
-getMessagesInTimeRange :: LeafStore -> Timestamp -> Timestamp -> [LogMessage]
-getMessagesInTimeRange store timeStart timeEnd = filter
-                                                 (\x -> ((x ^. lmTimestamp) >= timeStart) && ((x ^. lmTimestamp) <= timeEnd))
-                                                 store
-
-extractColumnValues :: V.Vector ColumnName -> LogMessage -> V.Vector (Maybe ColumnValue)
-extractColumnValues cols (LogMessage _ _ columns) = fmap (`H.lookup` columns) cols
+            [processSingleGroupBy q rows]
+    else map (processSingleGroupBy q) (groupRowsUsingIndices groupByIndices rows) where -- TODO: cleanup these lines
+        groupByIndices = catMaybes [V.findIndex (\x -> x ^. ceColumn == groupByName) (q ^. qColumnExpressions) | groupByName <- V.toList $ fromJust groupBy]
 
 extractColumnsAsRow :: V.Vector ColumnName -> LogMessage -> Row
-extractColumnsAsRow cols msg = Row $ fmap (fromMaybe RNull . liftM columnValueToResponseValue)
-                                          (extractColumnValues cols msg)
+extractColumnsAsRow cols (LogMessage _ _ columns) = fmap (fromMaybe RNull . liftM columnValueToResponseValue)
+                                                         (fmap (`H.lookup` columns) cols)
 
 isSimpleQuery :: Query -> Bool
 isSimpleQuery (Query columnExpressions _ _ _ _ groupBy _ _) = isNothing groupBy &&
@@ -90,27 +75,29 @@ isSimpleQuery (Query columnExpressions _ _ _ _ groupBy _ _) = isNothing groupBy 
   Given a query and a collection of log messages belonging to a single groupBy
   value, generate the single Row for the groupBy value.
  -}
-processSingleGroupBy :: Query -> [LogMessage] -> Row
-processSingleGroupBy (Query columnExpressions _ _ _ _ groupBy _ _) rows =
-    Row $ foldl aggFn initialValues (map projectionFn rows) where
-        columnNames = fmap (^. ceColumn) columnExpressions
-        aggregationFunctions = fmap (^. ceAggregationFunction) columnExpressions
+processSingleGroupBy :: Query -> [Row] -> Row
+processSingleGroupBy (Query columnExpressions _ _ _ _ _ _ _) = foldl aggFn initialValues where
+    aggFunctionsAndInitialValues = V.map aggFunctionAndInitialValue $ fmap (^. ceAggregationFunction) columnExpressions
 
-        projectionFn = extractColumnValues columnNames
+    aggFns = V.map fst aggFunctionsAndInitialValues :: V.Vector FoldFunction
+    initialValues = V.map snd aggFunctionsAndInitialValues :: V.Vector ResponseValue
 
-        aggFunctionsAndInitialValues = V.map aggFunctionAndInitialValue aggregationFunctions
-
-        aggFns = V.map fst aggFunctionsAndInitialValues :: V.Vector FoldFunction
-        initialValues = V.map snd aggFunctionsAndInitialValues :: V.Vector ResponseValue
-
-        aggFn = V.zipWith3 ($) aggFns :: V.Vector ResponseValue -> V.Vector (Maybe ColumnValue) -> V.Vector ResponseValue
+    aggFn = V.zipWith3 ($) aggFns :: Row -> Row -> Row
 
 {-
-  Given a groupBy and a list of log messages, create a list of lists of log messages
-  that have been partitioned by the groupBy. TODO: make sure this is efficient. It's
+  Given a list of column indices and a list of rows, create a list of lists of rows
+  that have been partitioned by the values in the indices. TODO: make sure this is efficient. It's
   probably not, but maybe the lazy map and lazy list will play together well.
  -}
-groupLogMessages :: GroupBy -> [LogMessage] -> [[LogMessage]]
-groupLogMessages columns msgs = L.elems $ partition project msgs where
+groupRowsUsingIndices :: [Int] -> [Row] -> [[Row]]
+groupRowsUsingIndices indices rows = L.elems $ partition project rows where
     partition f xs = L.fromListWith (++) [(f x, [x]) | x <- xs]
-    project = extractColumnValues columns
+    project row = [row V.! i | i <- indices]
+
+{-
+  Given a LeafStore and two Timestamps, return all messages taking place between the Timestamps
+ -}
+getMessagesInTimeRange :: LeafStore -> Timestamp -> Timestamp -> [LogMessage]
+getMessagesInTimeRange store timeStart timeEnd = filter
+                                                 (\x -> ((x ^. lmTimestamp) >= timeStart) && ((x ^. lmTimestamp) <= timeEnd))
+                                                 store

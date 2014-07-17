@@ -45,4 +45,4 @@ pShowResponse (Just (QueryResponse code mMessage mRows)) = "Response code " ++ s
                                                          ++ pShowRows mRows
   where pShowRows Nothing = ""
         pShowRows (Just rows) = ("\n" ++) $ intercalate "\n" $ map (("\t" ++) . pShowRow) $ V.toList rows
-        pShowRow (Row rs) = show $ V.toList rs
+        pShowRow rs = show $ V.toList rs

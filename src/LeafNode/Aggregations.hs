@@ -7,34 +7,34 @@ import Shared.Comparison (columnValueToResponseValue)
 
 import qualified Data.Vector as V
 
-type FoldFunction = ResponseValue -> Maybe ColumnValue -> ResponseValue
+type FoldFunction = ResponseValue -> ResponseValue -> ResponseValue
 
 aggConstant :: FoldFunction
-aggConstant RNull Nothing = RNull
-aggConstant RNull (Just x) = columnValueToResponseValue x
+aggConstant RNull RNull = RNull
+aggConstant RNull x = x
 aggConstant v _ = v
 initialConstant = RNull
 
 aggCount :: FoldFunction
-aggCount v Nothing = v
-aggCount (RIntValue i1) (Just _) = RIntValue (i1 + 1)
+aggCount v RNull = v
+aggCount (RIntValue i1) _ = RIntValue (i1 + 1)
 initialCount = RIntValue 0
 
 aggSum :: FoldFunction
-aggSum v Nothing = v
-aggSum (RIntValue i1) (Just (IntValue i2)) = RIntValue (i1 + i2)
+aggSum v RNull = v
+aggSum (RIntValue i1) (RIntValue i2) = RIntValue (i1 + i2)
 initialSum = RIntValue 0
 
 aggMin :: FoldFunction
-aggMin v Nothing = v
-aggMin RNull (Just (IntValue i)) = RIntValue i
-aggMin (RIntValue i1) (Just (IntValue i2)) = RIntValue $ min i1 i2
+aggMin v RNull = v
+aggMin RNull (RIntValue i) = RIntValue i
+aggMin (RIntValue i1) (RIntValue i2) = RIntValue $ min i1 i2
 initialMin = RNull
 
 aggMax :: FoldFunction
-aggMax v Nothing = v
-aggMax RNull (Just (IntValue i)) = RIntValue i
-aggMax (RIntValue i1) (Just (IntValue i2)) = RIntValue $ max i1 i2
+aggMax v RNull = v
+aggMax RNull (RIntValue i) = RIntValue i
+aggMax (RIntValue i1) (RIntValue i2) = RIntValue $ max i1 i2
 initialMax = RNull
 
 aggFunctionAndInitialValue :: AggregationFunction -> (FoldFunction, ResponseValue)

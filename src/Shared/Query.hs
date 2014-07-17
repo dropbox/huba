@@ -8,7 +8,7 @@ import Data.Ord (comparing)
 import Data.List (sortBy)
 
 qOrdering :: Query -> Maybe (Row -> Row -> Ordering)
-qOrdering (view qOrderBy -> Just orderBy) = Just $ comparing $ \r -> r ^? rValues . ix orderBy
+qOrdering (view qOrderBy -> Just orderBy) = Just $ comparing $ \r -> r ^? ix orderBy
 qOrdering _                               = Nothing
 
 orderRows :: Query -> [Row] -> [Row]
