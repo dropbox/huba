@@ -3,9 +3,13 @@ module Aggregator.Aggregator where
 
 import Shared.Thrift.Types
 import Shared.Query (orderRows)
+import Shared.Aggregation (aggregateRows)
+
+import qualified Data.Vector as V
 
 import Control.Lens
-import qualified Data.Vector as V
+import Control.Lens.TH
+
 import Data.Maybe (mapMaybe)
 
 fanoutFactor :: Int
@@ -24,9 +28,10 @@ fanout = chop fanoutFactor
 -- TODO: don't convert back and forth from a Vector; it's slow
 aggregate :: Query -> [QueryResponse] -> QueryResponse
 aggregate query rs = QueryResponse 0 Nothing (Just $ V.fromList rows)
-  where rows = take limit $ orderRows query (concat responseRows)
+  where rows = take limit $ orderRows query aggregatedRows
         limit = query ^. qLimit
-        responseRows = map V.toList $ mapMaybe (view qrRows) rs
+        allRows = concatMap V.toList $ mapMaybe (view qrRows) rs
+        aggregatedRows = aggregateRows query allRows
 
 
 rootQueryTransform :: Query -> Query

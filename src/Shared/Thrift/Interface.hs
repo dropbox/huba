@@ -17,6 +17,8 @@ import Data.Traversable (Traversable(traverse))
 import qualified Data.HashMap.Lazy as Map
 import Data.Int (Int32)
 
+import System.Log.Logger
+
 class TypeEquiv haskType thriftType | haskType -> thriftType, thriftType -> haskType where
     toThrift :: haskType -> thriftType
     fromThrift :: thriftType -> Maybe haskType
@@ -112,7 +114,9 @@ instance (LeafNodeService t, CommonService t) => T.LeafNodeService_Iface t where
     log _ _ = return $ toThrift $ LogResponse (-1) (Just "Invalid LogMessage!")
 
     query h ((>>= fromThrift) -> Just q) = toThrift <$> queryLeaf h q
-    query _ _ = return $ toThrift $ QueryResponse (-1) (Just "Invalid Query!") Nothing
+    query _ q = do
+      noticeM "----------***********!!!!!!!!!!!%%%%%%%%%%%"  $ show q
+      return $ toThrift $ QueryResponse (-1) (Just "Invalid Query!") Nothing
 
 -------------------------------
 

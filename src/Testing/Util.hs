@@ -30,7 +30,7 @@ genRandomLogMessage = do
   ts <- R.uniform 0 100000
   table <- RE.choice ["tableA", "tableB", "tableC"]
 
-  string1 <- RE.sample 10 ['a'..'z']
+  string1 <- RE.sample 1 ['a'..'z']
   int1 <- R.uniform 0 100
 
   -- numStringsInVector <- R.uniform 0 10
@@ -41,10 +41,9 @@ genRandomLogMessage = do
 
 waitForServer :: Server -> IO PingResponse
 waitForServer server = do
-    noticeM "Pinger" $ "About to try pinging: " ++ show server
     resp <- catch (sendPing server) (\e -> do
                                        let err = show (e :: SomeException)
-                                       putStrLn "Exception on ping!"
+                                       noticeM "waitForServer" "Exception on ping!"
                                        Just <$> waitForServer server)
 
     maybe (waitForServer server) return resp
