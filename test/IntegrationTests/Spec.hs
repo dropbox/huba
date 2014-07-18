@@ -43,15 +43,12 @@ runTestWithServers specAction = do
 
   -- Make sure all services respond to ping within some timeout
   pingResponses <- timeout (5 * 10^6) $ mapConcurrently (waitForServer . Server "localhost") allPorts
---
-  noticeM "Ping responses: " $ show pingResponses
   if isNothing pingResponses then do
       noticeM "Integration tests" "FAILURE: Not all servers responded to ping"
       hspec $ describe "Pinging" $
         it "fails" $ True `shouldBe` False
   else do
       noticeM "Integration tests" "SUCCESS on ping test"
-
       ------------------
       specAction
       ------------------

@@ -22,7 +22,7 @@ import Shared.Thrift.ClientInterface (Server(..))
 import Control.Concurrent.Async (async, waitAny, Async)
 import Control.Monad
 import Control.Applicative ((<$>))
-import Control.Exception (catch, SomeException, handle, bracket)
+import Control.Exception (catch, SomeException, handle, bracket, AsyncException)
 
 import System.Log.Logger
 import System.Log.Handler (setFormatter)
@@ -43,31 +43,31 @@ runServer (ingestorPort, rootAggregatorPort, intermediateAggregatorPort, leafNod
     catch (runBasicServer ingestorHandler IngestorService.process ingestorPort)
           (handleFailure "Ingestor")
 
-    -- return ()
-
   noticeM "Main" $ "Starting the Root Aggregator on port " ++ show rootAggregatorPort
   rootAggregator <- async $ do
     rootAggregatorHandler <- newRootAggregator
-    void $ runBasicServer rootAggregatorHandler AggregatorService.process rootAggregatorPort
+    void $ catch (runBasicServer rootAggregatorHandler AggregatorService.process rootAggregatorPort)
+                 (handleFailure "Root Aggregator")
 
   noticeM "Main" $ "Starting the Intermediate Aggregator on port " ++ show intermediateAggregatorPort
   intermediateAggregator <- async $ do
     intermediateAggregatorHandler <- newIntermediateAggregator [Server "localhost" leafNodePort] -- TODO: this is hacky
-    void $ runBasicServer intermediateAggregatorHandler InternalAggregatorService.process intermediateAggregatorPort
+    void $ catch (runBasicServer intermediateAggregatorHandler InternalAggregatorService.process intermediateAggregatorPort)
+                 (handleFailure "Intermediate Aggregator")
 
   -- TODO: start $ncpu LeafNodes
   noticeM "Main" $ "Starting a Leaf Node on port " ++ show leafNodePort
   leafNode <- async $ do
     leafHandler <- newLeafNodeHandler
-    void $ runBasicServer leafHandler LeafNodeService.process leafNodePort
+    void $ catch (runBasicServer leafHandler LeafNodeService.process leafNodePort)
+                 (handleFailure "Leaf Node")
 
   return [ingestor, rootAggregator, intermediateAggregator, leafNode]
 
 
-handleFailure :: String -> SomeException -> IO ()
+handleFailure :: String -> AsyncException -> IO ()
 handleFailure service e = do
-  let err = show (e :: SomeException)
-  noticeM "runServer" $ "Failed to start " ++ show service ++ " (" ++ err ++ ")"
+  noticeM "runServer" $ "Exception in " ++ show service ++ " (" ++ (show e) ++ ")"
 
 
 setupLogging :: IO ()
@@ -91,9 +91,7 @@ runThreadedServer :: (Transport t, Protocol i, Protocol o)
                   -> IO a
 runThreadedServer accepter hand proc port = do
     bracket (listenOn port)
-            (\x -> do
-               noticeM "ACTUALLY CLOSING" "**********************************************************"
-               sClose x)
+            sClose
             (\x -> acceptLoop (accepter x) (proc hand))
 
 -- | A basic threaded binary protocol socket server.
@@ -109,9 +107,6 @@ runBasicServer hand proc port = runThreadedServer binaryAccept hand proc (PortNu
 acceptLoop :: IO t -> (t -> IO Bool) -> IO a
 acceptLoop accepter proc = forever $
     do ps <- accepter
-       forkIO $ handle (\(e :: SomeException) -> do
-                          let err = show (e :: SomeException)
-                          noticeM "REALLY CATCHING" $ "THIS STUPID THREADKILLED, " ++ show err
-                          return ())
-                  (loop $ proc ps)
+       forkIO $ handle (\(e :: SomeException) -> return ())
+                       (loop $ proc ps)
   where loop m = do { continue <- m; when continue (loop m) }
