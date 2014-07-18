@@ -121,9 +121,7 @@ instance (LeafNodeService t, CommonService t) => T.LeafNodeService_Iface t where
     log _ _ = return $ toThrift $ LogResponse (-1) (Just "Invalid LogMessage!")
 
     query h ((>>= fromThrift) -> Just q) = toThrift <$> queryLeaf h q
-    query _ q = do
-      noticeM "----------***********!!!!!!!!!!!%%%%%%%%%%%"  $ show q
-      return $ toThrift $ QueryResponse (-1) (Just "Invalid Query!") Nothing
+    query _ _ = return $ toThrift $ QueryResponse (-1) (Just "Invalid Query!") Nothing
 
 -------------------------------
 
