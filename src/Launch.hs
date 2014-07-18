@@ -91,7 +91,9 @@ runThreadedServer :: (Transport t, Protocol i, Protocol o)
                   -> IO a
 runThreadedServer accepter hand proc port = do
     bracket (listenOn port)
-            sClose
+            (\x -> do
+               noticeM "ACTUALLY CLOSING" "**********************************************************"
+               sClose x)
             (\x -> acceptLoop (accepter x) (proc hand))
 
 -- | A basic threaded binary protocol socket server.
