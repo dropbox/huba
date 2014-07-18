@@ -1,5 +1,4 @@
-{-# LANGUAGE TemplateHaskell, DeriveGeneric #-}
-
+{-# LANGUAGE TemplateHaskell, DeriveGeneric, StandaloneDeriving #-}
 module Shared.Thrift.Types.Internal where
 
 import qualified Huba_Types as T
@@ -50,12 +49,15 @@ data PingResponse = PingResponse { _prCode :: Int32
                                  } deriving (Show, Eq, Generic)
 
 type AggregationFunction = T.AggregationFunction
+deriving instance Bounded T.AggregationFunction
+
 
 data ColumnExpression = ColumnExpression { _ceColumn :: ColumnName
                                          , _ceAggregationFunction :: AggregationFunction
                                          } deriving (Show, Eq)
 
 type ComparisonFunction = T.ComparisonFunction
+deriving instance Bounded T.ComparisonFunction
 
 data Condition = Condition { _cColumn :: ColumnName
                            , _cComparisonFunction :: ComparisonFunction
