@@ -1,5 +1,5 @@
 {-# LANGUAGE ViewPatterns #-}
-module Testing.TestDatabase where
+module Testing.TestDatastore where
 
 import Shared.Thrift.Types
 import Shared.Comparison (makeCondition)
@@ -27,16 +27,16 @@ testQuery ms (Query cols table startTime endTime conditions group order limit)
         groupBy Nothing   rs = rs
         groupBy (Just gs) rs = let Just is = V.mapM (\g -> V.elemIndex (ColumnExpression g CONSTANT) cols) gs
                                    getGroup rvs = V.map (rvs V.!) is in
-                               rs & map (\r@(Row rvs) -> (getGroup rvs, r))
+                               rs & map (\rvs -> (getGroup rvs, rvs))
                                   & M.fromListWith (combine cols)
                                   & M.elems
         orderBy Nothing = id
-        orderBy (Just o) = sortBy (comparing ((V.! o) . view rValues))
+        orderBy (Just o) = sortBy (comparing (V.! o))
 
 
 project :: V.Vector ColumnExpression -> LogMessage -> Row
 project cols LogMessage { _lmColumns = colMap }
-  = Row $ V.map findAndProject cols
+  = V.map findAndProject cols
   where findAndProject (ColumnExpression name agg) = case name `M.lookup` colMap of
                                                        Nothing -> RNull
                                                        Just colValue -> projectCol agg colValue
@@ -69,8 +69,7 @@ projectCol HISTOGRAM _                     = error "Histogram not supported"
 
 
 combine :: V.Vector ColumnExpression -> Row -> Row -> Row
-combine (V.map (view ceAggregationFunction) -> aggFns) (Row vs1) (Row vs2)
-  = Row $ V.zipWith3 combineCol aggFns vs1 vs2
+combine (V.map (view ceAggregationFunction) -> aggFns) = V.zipWith3 combineCol aggFns
 
 
 combineCol :: AggregationFunction -> ResponseValue -> ResponseValue -> ResponseValue

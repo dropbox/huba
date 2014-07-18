@@ -34,7 +34,7 @@ main = do
 
   replicateM_ numBatches $ do
          -- Get batchSize random messages
-         msgs <- replicateM batchSize $ R.runRVar genRandomLogMessage R.DevURandom
+         msgs <- replicateM batchSize genRandomLogMessage
          resp <- Client.log protocols $ V.fromList $ map toThrift (toList msgs)
          putStrLn $ "Got response: " ++ show resp
 
