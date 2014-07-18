@@ -8,6 +8,8 @@ import Shared.Thrift.Interface
 import Shared.Thrift.ClientInterface
 
 import qualified Data.Random as R
+import qualified Data.Random.Source.DevRandom as R
+
 import qualified Data.Random.Extras as RE
 import qualified Data.HashMap.Lazy as Map
 
@@ -26,7 +28,10 @@ import Data.Maybe (fromMaybe)
 
 import System.Log.Logger
 
-genRandomLogMessage = do
+genRandomLogMessage :: IO LogMessage
+genRandomLogMessage = R.runRVar genRandomLogMessage' R.DevURandom
+
+genRandomLogMessage' = do
   ts <- R.uniform 0 100000
   table <- RE.choice ["tableA", "tableB", "tableC"]
 
@@ -38,6 +43,7 @@ genRandomLogMessage = do
   -- TODO: make there be a chance of adding a random set of strings
   return $ LogMessage ts table $ Map.fromList [("string1", StringValue $ L.pack string1),
                                                ("int1", IntValue int1)]
+
 
 waitForServer :: Server -> IO PingResponse
 waitForServer server = do

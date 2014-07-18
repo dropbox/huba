@@ -65,7 +65,14 @@ int32ToInt = fromInteger . toInteger
 
 instance TypeEquiv Query T.Query where
     toThrift (Query ce t ts te mc mg mo l) = T.Query (Just $ toThrift ce) (Just t) (Just ts) (Just te) (toThrift <$> mc) mg (intToInt32 <$> mo) (Just $ intToInt32 l)
-    fromThrift (T.Query mce mt mts mte mc mg mo ml) = Query <$> (mce >>= fromThrift) <*> mt <*> mts <*> mte <*> (fromThrift <$> mc) <*> Just mg <*> Just (int32ToInt <$> mo) <*> (int32ToInt <$> ml)
+    fromThrift (T.Query mce mt mts mte mc mg mo ml) = Query <$> (mce >>= fromThrift)
+                                                            <*> mt
+                                                            <*> mts
+                                                            <*> mte
+                                                            <*> return (mc >>= fromThrift)
+                                                            <*> Just mg
+                                                            <*> Just (int32ToInt <$> mo)
+                                                            <*> (int32ToInt <$> ml)
 
 instance TypeEquiv ResponseValue T.ResponseValue where
     toThrift (RStringValue t)  = T.ResponseValue (Just t) Nothing  Nothing  Nothing  Nothing  Nothing
