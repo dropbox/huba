@@ -68,7 +68,7 @@ testQueryResponse messages query queryResponse = do
   ingestResponse <- sendIngestorLog (Server "localhost" 8000) messages
   threadDelay (1 * 10^5) -- Need a little time for the data to reach the leaf nodes & get indexed
   noticeM "testQueryResponse" $ "Done waiting! Sending query: " ++ show query
-  queryResp <- sendRootQuery (Server "localhost" 8003) query -- 8001
+  queryResp <- sendRootQuery (Server "localhost" 8001) query
   queryResp `shouldBe` Just queryResponse
 
 
