@@ -29,7 +29,9 @@ import Data.Maybe (fromMaybe)
 import System.Log.Logger
 
 genRandomLogMessage :: IO LogMessage
-genRandomLogMessage = flip R.runRVar R.DevURandom $ do
+genRandomLogMessage = R.runRVar genRandomLogMessage' R.DevURandom
+
+genRandomLogMessage' = do
   ts <- R.uniform 0 100000
   table <- RE.choice ["tableA", "tableB", "tableC"]
 
@@ -41,6 +43,7 @@ genRandomLogMessage = flip R.runRVar R.DevURandom $ do
   -- TODO: make there be a chance of adding a random set of strings
   return $ LogMessage ts table $ Map.fromList [("string1", StringValue $ L.pack string1),
                                                ("int1", IntValue int1)]
+
 
 waitForServer :: Server -> IO PingResponse
 waitForServer server = do
