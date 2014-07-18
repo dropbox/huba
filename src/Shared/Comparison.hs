@@ -113,11 +113,3 @@ instance Ord ColumnValue where
     StringValue _ `compare` StringVector _ = Prelude.GT
 
     StringSet _ `compare` StringVector _ = Prelude.GT
-
-
-
-columnValueToResponseValue :: ColumnValue -> ResponseValue
-columnValueToResponseValue (StringValue s) = RStringValue s
-columnValueToResponseValue (IntValue i) = RIntValue i
-columnValueToResponseValue (StringSet s) = RStringSet s
-columnValueToResponseValue (StringVector s) = RStringVector s

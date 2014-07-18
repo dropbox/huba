@@ -51,17 +51,17 @@ instance InternalAggregatorService IntermediateAggregator where
     -- no more fanning out needed - query our local LeafNodes
     | V.length serverIDs == 1 = do
       infoM "LeafAggregator" $ "Received query.  Sending to local leaf nodes: " ++ show (leaves)
-      debugM "LeafAggregator" $ show query
       responses <- flip mapConcurrently leaves $ \leaf ->
         join <$> (timeout timeoutInterval $ sendLeafQuery leaf query)
+
       return $ aggregate query $ catMaybes responses
 
     -- fan out the query to other IntermediateAggregators
     | otherwise = do
       infoM "IntermediateAggregator" $ "Received query.  Fanning out to " ++ show (map (getAggregator serverList . V.head) $ fanout serverIDs)
-      debugM "IntermediateAggregator" $ show query
       responses <- flip mapConcurrently (fanout serverIDs) $ \ss ->
         join <$> (timeout timeoutInterval $ sendInternalAggregatorQuery (getAggregator serverList $ V.head ss) query ss)
+
       return $ aggregate query $ catMaybes responses
 
 

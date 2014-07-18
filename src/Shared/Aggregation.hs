@@ -66,15 +66,15 @@ aggConstant RNull x = x
 aggConstant v _ = v
 initialConstant = RNull
 
-aggCount :: FoldFunction
-aggCount v RNull = v
-aggCount (RIntValue i1) _ = RIntValue (i1 + 1)
-initialCount = RIntValue 0
-
 aggSum :: FoldFunction
 aggSum v RNull = v
 aggSum (RIntValue i1) (RIntValue i2) = RIntValue (i1 + i2)
 initialSum = RIntValue 0
+
+-- To implement aggCount, a trick is used -- we project the column to a value of 1.
+-- Then all we have to do is fold over these values with sum.
+aggCount = aggSum
+initialCount = initialSum
 
 aggMin :: FoldFunction
 aggMin v RNull = v
