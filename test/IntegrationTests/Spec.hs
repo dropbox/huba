@@ -19,7 +19,7 @@ import Control.Monad (replicateM_, replicateM, forM, liftM, mapM_)
 
 import System.Timeout (timeout)
 
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, isNothing)
 
 import System.Log.Logger
 
@@ -42,14 +42,12 @@ runTestWithServers specAction = do
   threads <- concat <$> forM portTuples runServer
 
   -- Make sure all services respond to ping within some timeout
-  pingResponses <- mapConcurrently
-                   (\x -> timeout (5 * 10^6) (waitForServer $ Server "localhost" x))
-                   allPorts --[1, 2, 3]
-  if (length . filter isJust) pingResponses < length allPorts then
+  pingResponses <- timeout (5 * 10^6) $ mapConcurrently (\x -> waitForServer $ Server "localhost" x) allPorts
+
+  if isNothing pingResponses then do
       noticeM "Integration tests" "FAILURE: Not all servers responded to ping"
-      -- TODO: make the test fail somehow
-      -- describe "Pinging" $ do
-      --   it "fails" $ True `shouldBe` False
+      hspec $ describe "Pinging" $
+        it "fails" $ True `shouldBe` False
   else do
       noticeM "Integration tests" "SUCCESS on ping test"
 

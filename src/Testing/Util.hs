@@ -49,7 +49,6 @@ waitForServer :: Server -> IO PingResponse
 waitForServer server = do
     resp <- catch (sendPing server) (\e -> do
                                        let err = show (e :: SomeException)
-                                       noticeM "waitForServer" "Exception on ping!"
                                        Just <$> waitForServer server)
 
     maybe (waitForServer server) return resp
