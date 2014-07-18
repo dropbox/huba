@@ -25,8 +25,8 @@ testQuery ms (Query cols table startTime endTime conditions group order limit)
                                        filter (\msg -> V.all ($ msg) conditionFns)
         pluckColumns cs = map (project cs)
         groupBy Nothing   rs = rs
-        groupBy (Just gs) rs = let Just is = V.mapM (\g -> V.elemIndex (ColumnExpression g CONSTANT) cols) gs
-                                   getGroup rvs = V.map (rvs V.!) is in
+        groupBy (Just gs) rs = let Just indices = V.mapM (\g -> V.elemIndex (ColumnExpression g CONSTANT) cols) gs
+                                   getGroup rvs = V.map (rvs V.!) indices in
                                rs & map (\rvs -> (getGroup rvs, rvs))
                                   & M.fromListWith (combine cols)
                                   & M.elems
