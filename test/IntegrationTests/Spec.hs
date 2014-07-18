@@ -47,15 +47,13 @@ runTestWithServers specAction = do
              pingResponses <- timeout (5 * 10^6) $ mapConcurrently (waitForServer . Server "localhost") allPorts
              if isNothing pingResponses then do
                                           noticeM "Integration tests" "FAILURE: Not all servers responded to ping"
-                                          hspec $ describe "Pinging" $
-                                                it "fails" $ True `shouldBe` False
+                                          hspec $ describe "Pinging" $ it "fails" $ True `shouldBe` False
              else specAction)
 
 testQueryResponse :: LogBatch -> Query -> QueryResponse -> Expectation
 testQueryResponse messages query queryResponse = do
   ingestResponse <- sendIngestorLog (Server "localhost" 8000) messages
   threadDelay (1 * 10^5) -- Need a little time for the data to reach the leaf nodes & get indexed
-  noticeM "testQueryResponse" $ "Done waiting! Sending query: " ++ show query
   queryResp <- sendRootQuery (Server "localhost" 8001) query
   queryResp `shouldBe` Just queryResponse
 
