@@ -72,7 +72,7 @@ handleFailure service e = noticeM "runServer" $ "Exception in " ++ show service 
 setupLogging :: IO ()
 setupLogging = do
   let format = simpleLogFormatter "[$loggername] $pid | $tid: $msg"
-  handler <- (`setFormatter` format) <$> streamHandler stderr DEBUG
+  handler <- (`setFormatter` format) <$> streamHandler stderr NOTICE -- XXX
   updateGlobalLogger rootLoggerName (setHandlers [handler] . setLevel DEBUG)
 
 

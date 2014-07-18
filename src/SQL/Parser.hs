@@ -101,7 +101,7 @@ parseConditions = reserved "WHERE" >> sepBy1 parseCondition (reserved "AND")
 
 
 parseGroupBys :: Parser [ColumnName]
-parseGroupBys = reserved "GROUP" >> reserved "BY" >> commaSep1 parseColumnName
+parseGroupBys = reserved "GROUP" >> reserved "BY" >> (([] <$ reserved "UNIT") <|> commaSep1 parseColumnName)
 
 parseOrderBy :: Parser ColumnExpression
 parseOrderBy = reserved "ORDER" >> reserved "BY" >> parseAggregation
@@ -126,7 +126,7 @@ lexer = P.makeTokenParser emptyDef
   , P.commentLine = "#"
   , P.identStart = letter
   , P.identLetter = alphaNum <|> oneOf "_-"
-  , P.reservedNames = ["SELECT", "FROM", "WHERE", "AND", "GROUP", "ORDER", "BY", "LIMIT"] ++ map fst aggregationFns
+  , P.reservedNames = ["SELECT", "FROM", "WHERE", "AND", "GROUP", "ORDER", "BY", "LIMIT", "UNIT"] ++ map fst aggregationFns
   , P.opStart = oneOf $ map head $ map fst comprisonFns
   , P.opLetter = oneOf $ nub $ concatMap tail $ map fst comprisonFns
   , P.reservedOpNames = map fst comprisonFns
