@@ -42,8 +42,9 @@ runTestWithServers specAction = do
   threads <- concat <$> forM portTuples runServer
 
   -- Make sure all services respond to ping within some timeout
-  pingResponses <- timeout (5 * 10^6) $ mapConcurrently (\x -> waitForServer $ Server "localhost" x) allPorts
-
+  pingResponses <- timeout (5 * 10^6) $ mapConcurrently (waitForServer . Server "localhost") allPorts
+--
+  noticeM "Ping responses: " $ show pingResponses
   if isNothing pingResponses then do
       noticeM "Integration tests" "FAILURE: Not all servers responded to ping"
       hspec $ describe "Pinging" $
@@ -55,10 +56,10 @@ runTestWithServers specAction = do
       specAction
       ------------------
 
-      noticeM "runTestWithServers" "Stopping servers"
-      mapM_ cancel threads
+  noticeM "runTestWithServers" "Stopping servers"
+  mapM_ cancel threads
 
-      return ()
+  return ()
 
 
 testQueryResponse :: LogBatch -> Query -> QueryResponse -> Expectation

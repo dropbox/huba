@@ -49,6 +49,7 @@ waitForServer :: Server -> IO PingResponse
 waitForServer server = do
     resp <- catch (sendPing server) (\e -> do
                                        let err = show (e :: SomeException)
+                                       noticeM "Pinger" $ "Failed to ping server: " ++ show server ++ ", error: " ++ err
                                        Just <$> waitForServer server)
 
     maybe (waitForServer server) return resp
