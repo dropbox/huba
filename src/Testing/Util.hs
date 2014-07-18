@@ -8,6 +8,8 @@ import Shared.Thrift.Interface
 import Shared.Thrift.ClientInterface
 
 import qualified Data.Random as R
+import qualified Data.Random.Source.DevRandom as R
+
 import qualified Data.Random.Extras as RE
 import qualified Data.HashMap.Lazy as Map
 
@@ -26,7 +28,8 @@ import Data.Maybe (fromMaybe)
 
 import System.Log.Logger
 
-genRandomLogMessage = do
+genRandomLogMessage :: IO LogMessage
+genRandomLogMessage = flip R.runRVar R.DevURandom $ do
   ts <- R.uniform 0 100000
   table <- RE.choice ["tableA", "tableB", "tableC"]
 

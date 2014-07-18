@@ -10,15 +10,14 @@ import Shared.Thrift.ClientInterface (sendIngestorLog, Server(..))
 
 import Control.Concurrent.Async (async, waitAny, mapConcurrently)
 import Control.Applicative ( (<$>) )
+import Control.Monad (unless)
 import Network
 import Data.Foldable (toList)
 import Data.Vector as V (fromList)
 import Control.Monad (replicateM_, replicateM, forM, liftM)
 
 import System.Timeout (timeout)
-
-import qualified Data.Random.Source.DevRandom as R
-import qualified Data.Random as R
+import System.Exit
 
 import Data.Maybe (isJust)
 
@@ -40,9 +39,11 @@ tests = do
   pingResponses <- mapConcurrently
                    (\x -> timeout (5 * 10^6) (waitForServer $ Server "localhost" x))
                    allPorts
-  if (length . filter isJust) pingResponses < length allPorts then
-      noticeM "Integration tests" "FAILURE: Not all servers responded to ping" else
-      noticeM "Integration tests" "SUCCESS on ping test"
+  unless (all isJust pingResponses) $ do
+    errorM "Integration tests" "FAILURE: Not all servers responded to ping"
+    exitFailure
+    
+  noticeM "Integration tests" "SUCCESS on ping test"
 
 
   -- Send a bunch of random LogMessages into the system
@@ -52,7 +53,7 @@ tests = do
 
   replicateM_ numBatches $ do
          -- Get batchSize random messages
-         msgs <- replicateM batchSize $ R.runRVar genRandomLogMessage R.DevURandom
+         msgs <- replicateM batchSize genRandomLogMessage
          resp <- sendIngestorLog server $ V.fromList msgs
          putStrLn $ "Got response: " ++ show resp
 
