@@ -66,8 +66,7 @@ runServer (ingestorPort, rootAggregatorPort, intermediateAggregatorPort, leafNod
 
 
 handleFailure :: String -> AsyncException -> IO ()
-handleFailure service e = do
-  noticeM "runServer" $ "Exception in " ++ show service ++ " (" ++ (show e) ++ ")"
+handleFailure service e = noticeM "runServer" $ "Exception in " ++ show service ++ " (" ++ show e ++ ")"
 
 
 setupLogging :: IO ()
@@ -91,9 +90,7 @@ runThreadedServer :: (Transport t, Protocol i, Protocol o)
                   -> IO a
 runThreadedServer accepter hand proc port = do
     bracket (listenOn port)
-            (\x -> do
-               noticeM "ACTUALLY CLOSING" "**********************************************************"
-               sClose x)
+            sClose
             (\x -> acceptLoop (accepter x) (proc hand))
 
 -- | A basic threaded binary protocol socket server.
