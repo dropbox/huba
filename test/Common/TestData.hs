@@ -49,22 +49,22 @@ makeSpec testQueryResponse = do
   describe "Aggregations" $ do
     it "can do a count aggregation" $
        testQueryResponse allMessages
-                         (Query [ColumnExpression "int1" COUNT, ColumnExpression "string1" CONSTANT] "some-table" 0 100 Nothing Nothing Nothing 100)
+                         (Query [ColumnExpression "int1" COUNT, ColumnExpression "string1" CONSTANT] "some-table" 0 100 Nothing (Just []) Nothing 100)
                          (successfulQueryResponse [[RIntValue 4, RStringValue "s1"]])
 
     it "can do a min aggregation" $
        testQueryResponse allMessages
-                         (Query [ColumnExpression "int1" MIN, ColumnExpression "string1" CONSTANT] "some-table" 0 100 Nothing Nothing Nothing 100)
+                         (Query [ColumnExpression "int1" MIN, ColumnExpression "string1" CONSTANT] "some-table" 0 100 Nothing (Just []) Nothing 100)
                          (successfulQueryResponse [[RIntValue 3, RStringValue "s1"]])
 
     it "can do a max aggregation" $
        testQueryResponse allMessages
-                         (Query [ColumnExpression "int1" MAX, ColumnExpression "string1" CONSTANT] "some-table" 0 100 Nothing Nothing Nothing 100)
+                         (Query [ColumnExpression "int1" MAX, ColumnExpression "string1" CONSTANT] "some-table" 0 100 Nothing (Just []) Nothing 100)
                          (successfulQueryResponse [[RIntValue 100, RStringValue "s1"]])
 
     it "can do a sum aggregation" $
        testQueryResponse allMessages
-                         (Query [ColumnExpression "int1" SUM, ColumnExpression "string1" CONSTANT] "some-table" 0 100 Nothing Nothing Nothing 100)
+                         (Query [ColumnExpression "int1" SUM, ColumnExpression "string1" CONSTANT] "some-table" 0 100 Nothing (Just []) Nothing 100)
                          (successfulQueryResponse [[RIntValue 160, RStringValue "s1"]])
 
   describe "GroupBys" $ do
