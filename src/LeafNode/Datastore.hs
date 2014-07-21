@@ -1,29 +1,15 @@
-{-# LANGUAGE OverloadedStrings, OverloadedLists #-}
+module LeafNode.Datastore (LeafStore(), ingestBatch, query, groupBy) where
 
-module LeafNode.Datastore (LeafStore(), ingestBatch, query) where
+import Shared.Thrift.Types
+import Shared.Comparison (makeCondition)
+import Shared.Row (project)
+import Shared.Aggregation (groupBy)
 
-import Shared.Thrift.Types as T
-import Shared.Thrift.Interface
-import Shared.Comparison
-import Shared.Query (orderRows)
-import Shared.Aggregation (aggregateRows)
-
-import qualified Data.Vector as V
-import Data.List (insert, sortBy, groupBy)
-
-import Control.Monad (liftM)
 import Control.Lens
-import Control.Lens.TH
-import Data.Maybe (fromMaybe, isNothing, fromJust, catMaybes)
-
-import Data.Int (Int32)
+import Data.List (sortBy, insert)
 import Data.Ord (comparing)
-
-import Data.Function (on)
-
-import qualified Data.HashMap.Lazy as Map
-import qualified Data.HashMap.Strict as H
-
+import qualified Data.Vector as V
+import qualified Data.HashMap.Lazy as M
 
 type LeafStore = [LogMessage]
 
@@ -33,45 +19,20 @@ ingestBatch = V.foldl' (flip insert)
 
 {- Answer a query -}
 query :: LeafStore -> Query -> QueryResponse
-query store q = QueryResponse 0 Nothing (Just $ V.fromList responseRows)
-    where
-      rowsInTimeRange = getMessagesInTimeRange store (q ^. qTimeStart) (q ^. qTimeEnd)
-
-      -- TODO: make this and filterFn nicer
-      makeConditions conds message = all (($ message) . makeCondition) conds
-
-      filterFn :: [LogMessage] -> [LogMessage]
-      filterFn = let conditionFn = case q ^. qConditions of
-                                     Nothing -> const True
-                                     Just conditions -> makeConditions $ V.toList conditions in
-                 filter (\x -> conditionFn x && (q ^. qTable == x ^. lmTable))
-
-      projectFn :: [LogMessage] -> [Row]
-      projectFn = liftM $ extractColumnsAsRow (q ^. qColumnExpressions)
-
-      responseRows = (take (q ^. qLimit) . orderRows q . aggregateRows q . projectFn . filterFn) rowsInTimeRange
-      -- TODO: make sure the sort interacts with the limit/processing efficiently here.
-
-----------------------------------------------------------------------------------------------------------
-
-{-
-  Given a LeafStore and two Timestamps, return all messages taking place between the Timestamps
- -}
-getMessagesInTimeRange :: LeafStore -> Timestamp -> Timestamp -> [LogMessage]
-getMessagesInTimeRange store timeStart timeEnd = filter
-                                                 (\x -> ((x ^. lmTimestamp) >= timeStart) && ((x ^. lmTimestamp) <= timeEnd))
-                                                 store
-
-
-extractColumnsAsRow :: V.Vector ColumnExpression -> LogMessage -> Row
-extractColumnsAsRow columnExpressions (LogMessage _ _ columns) = fmap (projectColumnExpression columns) columnExpressions
-
-projectColumnExpression ::  Map.HashMap ColumnName ColumnValue -> ColumnExpression -> ResponseValue
-projectColumnExpression columns (ColumnExpression name fn) = fromMaybe RNull $ liftM project $ H.lookup name columns where
-    project v = if fn == T.COUNT then RIntValue 1 else columnValueToResponseValue v
-
-    columnValueToResponseValue :: ColumnValue -> ResponseValue
-    columnValueToResponseValue (StringValue s) = RStringValue s
-    columnValueToResponseValue (IntValue i) = RIntValue i
-    columnValueToResponseValue (StringSet s) = RStringSet s
-    columnValueToResponseValue (StringVector s) = RStringVector s
+query ms (Query cols table startTime endTime conditions group order limit)
+  = ms & filterTable table
+       & filterTime startTime endTime
+       & filterConditions conditions
+       & pluckColumns cols
+       & groupBy group cols
+       & orderBy order
+       & take limit
+       & V.fromList & Just & QueryResponse 0 Nothing
+  where filterTable t = filter (^. lmTable . to (== t))
+        filterTime start end = filter (^. lmTimestamp . to (\t -> t >= start && t <= end))
+        filterConditions Nothing = id
+        filterConditions (Just cs) = let conditionFns = V.map makeCondition cs in
+                                       filter (\msg -> V.all ($ msg) conditionFns)
+        pluckColumns cs = map (project cs)
+        orderBy Nothing = id
+        orderBy (Just o) = sortBy (comparing (V.! o))

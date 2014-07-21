@@ -3,7 +3,7 @@ module Aggregator.Aggregator where
 
 import Shared.Thrift.Types
 import Shared.Query (orderRows)
-import Shared.Aggregation (aggregateRows)
+import Shared.Aggregation (groupBy')
 
 import qualified Data.Vector as V
 
@@ -31,7 +31,7 @@ aggregate query rs = QueryResponse 0 Nothing (Just $ V.fromList rows)
   where rows = take limit $ orderRows query aggregatedRows
         limit = query ^. qLimit
         allRows = concatMap V.toList $ mapMaybe (view qrRows) rs
-        aggregatedRows = aggregateRows query allRows
+        aggregatedRows = groupBy' query allRows
 
 
 rootQueryTransform :: Query -> Query
