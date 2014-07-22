@@ -5,11 +5,11 @@ name:                Huba
 version:             0.1.0.0
 -- synopsis:
 -- description:
-license:             MIT
+license:             OtherLicense
 license-file:        LICENSE
 author:              Tom and David
 maintainer:          ddfisher@dropbox.com
--- copyright:
+copyright:           Copyright (c) 2014 Dropbox, Inc.
 category:            Database
 build-type:          Simple
 extra-source-files:  README.md
